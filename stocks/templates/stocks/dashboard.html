@@ -1,0 +1,11 @@
+<h1>Stock Dashboard</h1>
+
+{% for stock in stocks %}
+    <div>
+        <h2>{{ stock.name }}</h2>
+        <p>Current Price: {{ stock.current_price }}</p>
+        <p>Annual Return: {{ stock.annual_return }}%</p>
+        <p>Volatility: {{ stock.volatility }}%</p>
+        <hr>
+    </div>
+{% endfor %}

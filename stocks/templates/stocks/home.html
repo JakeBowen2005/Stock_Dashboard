@@ -1,0 +1,116 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Market Dashboard</title>
+    <style>
+
+        body {
+            margin: 0;
+            font-family: 'Times New Roman', Times, serif;
+            background-image: url("{% static 'images/stock_bg3.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .brand {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            color: black;
+            font-size: 40px;
+            font-weight: bolder;
+            letter-spacing: 1px;
+        }
+
+        .input-card {
+            background: rgba(255, 255, 255, 0.92);
+            padding: 40px;
+            width: 400px;
+            height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25 px rgba(0,0,0,0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4A90E2;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .added-stocks {
+            margin-top: 20px;
+            max-height: 120px;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        .stock-pill {
+            display: inline-block;
+            background-color: #4A90E2;
+            color: white;
+            padding: 6px 10px;
+            margin: 5px 5px 0 0;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+    </style>
+
+
+
+
+
+</head>
+<body>
+    <div class="brand">Stock Market Anaylzer</div>
+   <div class="input-card">
+
+        <h2 style="text-align: center;">Input stock ticker</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="ticker" placeholder="(APPL, NVDA, MSFT)" style="text-align: center;">
+            <button type="submit">
+                Add stock
+            </button>
+        </form>
+        <div class="added-stocks">
+            <h4 style="margin-bottom: 8px;">Stocks Added (Max 8)</h4>
+            {% if added_stocks %}
+                {% for stock in added_stocks %}
+                    <span class="stock-pill">{{ stock }}</span>
+                {% endfor %}
+            {% else %}
+                <p style="font-size: 13px; color: #777;">No stocks added yet.</p>
+            {% endif %}
+        </div>
+        <form method="post" action="{% url 'analyze' %}">
+            {% csrf_token %}
+            <button type="submit" style="margin-top: 20px;">
+                Analyze stocks
+            </button>
+        </form>
+   </div>
+
+
+</body>
+</html>

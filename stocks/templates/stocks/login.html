@@ -1,0 +1,94 @@
+{% extends "stocks/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block extra_style %}
+    .auth-wrap {
+        min-height: calc(100vh - 82px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .auth-card {
+        width: min(460px, 100%);
+    }
+
+    .auth-card .title {
+        text-align: center;
+    }
+
+    .auth-card .subtitle {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    form {
+        display: grid;
+        gap: 10px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(116, 152, 196, 0.35);
+        background: rgba(7, 17, 32, 0.7);
+        color: var(--text-main);
+    }
+
+    .errorlist {
+        list-style: none;
+        margin: 0 0 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: rgba(255, 111, 125, 0.15);
+        border: 1px solid rgba(255, 111, 125, 0.35);
+        color: #ffd4d8;
+        font-size: 13px;
+    }
+
+    .switch-link {
+        margin-top: 14px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="auth-wrap">
+        <div class="page-shell auth-card">
+            <h1 class="title">Login</h1>
+            <p class="subtitle">Access your stock dashboard account.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+
+                <button type="submit">Login</button>
+            </form>
+
+            <p class="switch-link">
+                Need an account?
+                <a class="link-btn" href="{% url 'signup' %}" style="padding:6px 10px; font-size:12px;">Sign Up</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

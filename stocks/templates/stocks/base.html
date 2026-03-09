@@ -88,10 +88,43 @@
             color: var(--text-muted);
         }
 
+        .auth-nav {
+            max-width: 1200px;
+            margin: 0 auto 12px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .auth-nav form {
+            margin: 0;
+        }
+
+        .auth-nav button,
+        .auth-nav .link-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
         {% block extra_style %}{% endblock %}
     </style>
 </head>
 <body>
+    <div class="auth-nav">
+        {% if request.user.is_authenticated %}
+            <span>Signed in as {{ request.user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">Logout</button>
+            </form>
+        {% else %}
+            <a class="link-btn" href="{% url 'login' %}">Login</a>
+            <a class="link-btn" href="{% url 'signup' %}">Sign Up</a>
+        {% endif %}
+    </div>
     {% block content %}{% endblock %}
 </body>
 </html>

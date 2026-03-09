@@ -11,3 +11,6 @@ def get_financials(ticker):
 
 def get_actions(ticker):
     return ticker.actions
+
+def get_balance_sheet(ticker):
+    return ticker.balance_sheet

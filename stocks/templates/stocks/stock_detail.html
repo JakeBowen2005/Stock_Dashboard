@@ -181,6 +181,14 @@
                 <div class="panel">
                     <h3>Risk and Technicals</h3>
                     <div class="metric-row">
+                        <span class="metric-label">Return On Equity</span>
+                        <span class="metric-value">{{ stock.roe|floatformat:2}}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Debt to Equity</span>
+                        <span class="metric-value">${{ stock.debt_to_equity|floatformat:2}}</span>
+                    </div>
+                    <div class="metric-row">
                         <span class="metric-label">Volatility</span>
                         <span class="metric-value">{{ stock.volatility|floatformat:2 }}%</span>
                     </div>

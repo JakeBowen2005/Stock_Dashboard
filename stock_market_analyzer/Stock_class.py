@@ -1,5 +1,11 @@
 from . import data_loader
 from . import stock_metrics
+import pandas as pd
+
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", None)
+pd.set_option("display.max_colwidth", None)
+pd.set_option("display.max_rows", None)
 
 class Stock:
     def __init__(self, ticker):
@@ -10,6 +16,7 @@ class Stock:
         self.price_history = stock_metrics.daily_returns(self.price_history)
         self.financials = data_loader.get_financials(self.ticker)
         self.actions = data_loader.get_actions(self.ticker)
+        self.balance_sheet = data_loader.get_balance_sheet(self.ticker)
 
         # Current Price
         self.current_price = self.price_history["Adj Close"].iloc[-1]
@@ -38,6 +45,8 @@ class Stock:
         self.eps = self.financials.loc["Basic EPS"].iloc[0]
         self.cagr_5y = stock_metrics.cagr(self.price_history, years=5)
         self.cagr_10y = stock_metrics.cagr(self.price_history, years=10)
+        self.roe = stock_metrics.return_on_equity(self.financials, self.balance_sheet)
+        self.debt_to_equity = stock_metrics.debt_to_equity(self.balance_sheet)
 
 
     #Recent performace
@@ -59,6 +68,9 @@ class Stock:
         print(f"  Max Drawdown: {self.max_drawdown:.2f}%")
 
     def summary_dict(self):
+        def round_or_none(value, digits=2):
+            return round(value, digits) if value is not None else None
+
         stock_dict = {
                     "name": self.name,
                     "current_price": round(self.current_price, 2),
@@ -80,9 +92,7 @@ class Stock:
                     "max_drawdown": round(self.max_drawdown * 100, 2),
                     "above_50ma": self.is_above50_ma,
                     "above_200ma": self.is_above200_ma,
+                    "roe": round_or_none(self.roe * 100) if self.roe is not None else None,
+                    "debt_to_equity": round_or_none(self.debt_to_equity),
         }
         return stock_dict
-
-
-
-        

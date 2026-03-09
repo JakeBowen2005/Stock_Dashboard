@@ -1,6 +1,11 @@
-from django.shortcuts import render
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.shortcuts import redirect, render
 
 from stock_market_analyzer.Stock_class import Stock
+
+from .forms import SignUpForm
 
 
 def _build_signal_snapshot(stock):
@@ -41,6 +46,44 @@ def _build_signal_snapshot(stock):
     }
 
 
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect("home")
+
+    if request.method == "POST":
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("home")
+    else:
+        form = SignUpForm()
+
+    return render(request, "stocks/signup.html", {"form": form})
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("home")
+
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect("home")
+    else:
+        form = AuthenticationForm()
+
+    return render(request, "stocks/login.html", {"form": form})
+
+
+def logout_view(request):
+    if request.method == "POST":
+        logout(request)
+    return redirect("login")
+
+
+@login_required
 def home(request):
     notice = ""
 
@@ -77,6 +120,7 @@ def home(request):
     })
 
 
+@login_required
 def analyze(request):
     added_stocks = request.session.get("added_stocks", [])
     stock_summaries = []
@@ -92,6 +136,7 @@ def analyze(request):
     })
 
 
+@login_required
 def stock_detail(request, ticker):
     ticker = ticker.upper().strip()
 

@@ -106,6 +106,69 @@ def cagr(data, years=None):
     return float(cagr_value)
 
 
+def _statement_value(statement_df, row_names):
+    """
+    Return the first non-null value for any candidate row name.
+    """
+    if statement_df is None or statement_df.empty:
+        return None
+
+    for row_name in row_names:
+        if row_name in statement_df.index:
+            series = statement_df.loc[row_name].dropna()
+            if not series.empty:
+                return float(series.iloc[0])
+    return None
+
+
+def return_on_equity(financials, balance_sheet):
+    net_income = _statement_value(
+        financials,
+        [
+            "Net Income",
+            "Net Income Common Stockholders",
+            "Net Income Including Noncontrolling Interests",
+        ],
+    )
+    total_equity = _statement_value(
+        balance_sheet,
+        [
+            "Stockholders Equity",
+            "Total Stockholder Equity",
+            "Total Equity Gross Minority Interest",
+            "Common Stock Equity",
+        ],
+    )
+
+    if net_income is None or total_equity in (None, 0):
+        return None
+    return float(net_income / total_equity)
+
+
+def debt_to_equity(balance_sheet):
+    total_debt = _statement_value(
+        balance_sheet,
+        [
+            "Total Debt",
+            "Long Term Debt",
+            "Long Term Debt And Capital Lease Obligation",
+        ],
+    )
+    total_equity = _statement_value(
+        balance_sheet,
+        [
+            "Stockholders Equity",
+            "Total Stockholder Equity",
+            "Total Equity Gross Minority Interest",
+            "Common Stock Equity",
+        ],
+    )
+
+    if total_debt is None or total_equity in (None, 0):
+        return None
+    return float(total_debt / total_equity)
+
+
 
 
 

@@ -1,171 +1,153 @@
-{% load static %}
+{% extends "stocks/base.html" %}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Stock Market Dashboard</title>
-    <style>
-        :root {
-            --bg-1: #081425;
-            --bg-2: #0f2340;
-            --panel: rgba(10, 20, 38, 0.82);
-            --border: rgba(116, 152, 196, 0.22);
-            --text-main: #f1f6ff;
-            --text-muted: #a7b8d3;
-            --accent: #58a6ff;
-        }
+{% block title %}Stock Market Analyzer{% endblock %}
 
-        * {
-            box-sizing: border-box;
-        }
+{% block extra_style %}
+    .home-wrap {
+        min-height: calc(100vh - 82px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        body {
-            margin: 0;
-            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-            color: var(--text-main);
-            min-height: 100vh;
-            background:
-                linear-gradient(rgba(8, 20, 37, 0.9), rgba(8, 20, 37, 0.9)),
-                url("{% static 'images/stock_bg3.jpg' %}") center/cover no-repeat fixed;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 24px;
-        }
+    .home-card {
+        width: min(460px, 100%);
+    }
 
-        .brand {
-            position: absolute;
-            top: 24px;
-            left: 30px;
-            color: var(--text-main);
-            font-size: clamp(26px, 4vw, 42px);
-            font-weight: 700;
-            letter-spacing: 0.6px;
-        }
+    .home-card .title {
+        text-align: center;
+    }
 
-        .input-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            backdrop-filter: blur(4px);
-            padding: 28px;
-            width: min(460px, 100%);
-            border-radius: 14px;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
-        }
+    .home-card .subtitle {
+        text-align: center;
+        margin-bottom: 20px;
+    }
 
-        h2 {
-            margin: 0 0 16px;
-            text-align: center;
-            font-size: 34px;
-            letter-spacing: 0.2px;
-        }
+    .ticker-form {
+        display: grid;
+        gap: 10px;
+    }
 
-        .subtitle {
-            margin: 0 0 20px;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
+    input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(116, 152, 196, 0.35);
+        background: rgba(7, 17, 32, 0.7);
+        color: var(--text-main);
+        text-transform: uppercase;
+    }
 
-        button {
-            width: 100%;
-            padding: 11px;
-            background-color: rgba(88, 166, 255, 0.2);
-            border: 1px solid rgba(88, 166, 255, 0.5);
-            color: var(--text-main);
-            font-weight: 700;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 15px;
-        }
+    input[type="text"]::placeholder {
+        color: #8ea3c3;
+    }
 
-        button:hover {
-            background-color: rgba(88, 166, 255, 0.3);
-        }
+    .notice {
+        margin: 0 0 14px;
+        border: 1px solid rgba(88, 166, 255, 0.45);
+        background: rgba(88, 166, 255, 0.12);
+        color: var(--text-main);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+    }
 
-        input {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(116, 152, 196, 0.35);
-            background: rgba(7, 17, 32, 0.7);
-            color: var(--text-main);
-            text-transform: uppercase;
-        }
+    .added-stocks {
+        margin-top: 20px;
+        max-height: 140px;
+        overflow-y: auto;
+        border-top: 1px solid rgba(116, 152, 196, 0.25);
+        padding-top: 12px;
+    }
 
-        input::placeholder {
-            color: #8ea3c3;
-        }
+    .added-stocks h4 {
+        margin: 0 0 10px;
+    }
 
-        .added-stocks {
-            margin-top: 20px;
-            max-height: 120px;
-            overflow-y: auto;
-            border-top: 1px solid rgba(116, 152, 196, 0.25);
-            padding-top: 12px;
-        }
+    .stock-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 
-        .added-stocks h4 {
-            margin: 0 0 10px;
-            color: var(--text-main);
-        }
+    .stock-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: rgba(88, 166, 255, 0.24);
+        border: 1px solid rgba(88, 166, 255, 0.5);
+        color: var(--text-main);
+        padding: 6px 8px 6px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
 
-        .stock-pill {
-            display: inline-block;
-            background-color: rgba(88, 166, 255, 0.24);
-            border: 1px solid rgba(88, 166, 255, 0.5);
-            color: var(--text-main);
-            padding: 6px 10px;
-            margin: 5px 5px 0 0;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+    .remove-btn {
+        padding: 2px 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 111, 125, 0.18);
+        color: var(--text-main);
+        font-size: 11px;
+        line-height: 1;
+    }
 
-        .empty-note {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin: 0;
-        }
-    </style>
+    .actions {
+        margin-top: 20px;
+    }
 
+    .actions form,
+    .actions button {
+        width: 100%;
+    }
+{% endblock %}
 
+{% block content %}
+    <div class="home-wrap">
+        <div class="page-shell home-card">
+            <h1 class="title">Stock Dashboard</h1>
+            <p class="subtitle">Add up to 8 ticker symbols, remove mistakes, then run analysis.</p>
 
-
-
-</head>
-<body>
-    <div class="brand">Stock Market Analyzer</div>
-   <div class="input-card">
-        <h2>Stock Dashboard</h2>
-        <p class="subtitle">Add up to 8 ticker symbols to analyze.</p>
-        <form method="post">
-            {% csrf_token %}
-            <input type="text" name="ticker" placeholder="AAPL, NVDA, MSFT" style="text-align: center;">
-            <button type="submit">
-                Add Stock
-            </button>
-        </form>
-        <div class="added-stocks">
-            <h4>Stocks Added (Max 8)</h4>
-            {% if added_stocks %}
-                {% for stock in added_stocks %}
-                    <span class="stock-pill">{{ stock }}</span>
-                {% endfor %}
-            {% else %}
-                <p class="empty-note">No stocks added yet.</p>
+            {% if notice %}
+                <p class="notice">{{ notice }}</p>
             {% endif %}
+
+            <form method="post" class="ticker-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <input type="text" name="ticker" placeholder="AAPL, NVDA, MSFT" autocomplete="off">
+                <button type="submit">Add Stock</button>
+            </form>
+
+            <div class="added-stocks">
+                <h4>Stocks Added (Max 8)</h4>
+                {% if added_stocks %}
+                    <div class="stock-list">
+                        {% for stock in added_stocks %}
+                            <span class="stock-pill">
+                                {{ stock }}
+                                <form method="post" style="display:inline; margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="remove">
+                                    <input type="hidden" name="ticker" value="{{ stock }}">
+                                    <button type="submit" class="remove-btn" aria-label="Remove {{ stock }}">x</button>
+                                </form>
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="muted" style="font-size:13px; margin:0;">No stocks added yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                <form method="post" action="{% url 'analyze' %}">
+                    {% csrf_token %}
+                    <button type="submit" {% if not added_stocks %}disabled{% endif %}>Analyze Stocks</button>
+                </form>
+            </div>
         </div>
-        <form method="post" action="{% url 'analyze' %}">
-            {% csrf_token %}
-            <button type="submit" style="margin-top: 20px;">
-                Analyze Stocks
-            </button>
-        </form>
-   </div>
-
-
-</body>
-</html>
+    </div>
+{% endblock %}

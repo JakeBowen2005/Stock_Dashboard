@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Stock Dashboard{% endblock %}</title>
+    <style>
+        :root {
+            --bg-1: #081425;
+            --bg-2: #0f2340;
+            --panel: rgba(10, 20, 38, 0.82);
+            --card: rgba(13, 28, 50, 0.9);
+            --border: rgba(116, 152, 196, 0.22);
+            --text-main: #f1f6ff;
+            --text-muted: #a7b8d3;
+            --accent: #58a6ff;
+            --pos: #41c57a;
+            --neg: #ff6f7d;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            background:
+                linear-gradient(rgba(8, 20, 37, 0.9), rgba(8, 20, 37, 0.9)),
+                url("{% static 'images/stock_bg3.jpg' %}") center/cover no-repeat fixed;
+            padding: 34px 24px 48px;
+        }
+
+        .page-shell {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: 0.2px;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .link-btn,
+        button {
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: var(--text-main);
+            background: rgba(88, 166, 255, 0.2);
+            border: 1px solid rgba(88, 166, 255, 0.45);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .link-btn:hover,
+        button:hover {
+            background: rgba(88, 166, 255, 0.3);
+        }
+
+        .muted {
+            color: var(--text-muted);
+        }
+
+        {% block extra_style %}{% endblock %}
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>

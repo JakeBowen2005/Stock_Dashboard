@@ -9,12 +9,24 @@
         gap: 16px;
     }
 
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
     .stock-card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 16px;
         box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card-link:hover .stock-card {
+        transform: translateY(-2px);
+        border-color: rgba(88, 166, 255, 0.55);
     }
 
     .card-head {
@@ -71,6 +83,12 @@
         color: var(--text-main);
     }
 
+    .hint {
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
     .empty-state {
         border: 1px dashed rgba(116, 152, 196, 0.35);
         border-radius: 10px;
@@ -94,45 +112,41 @@
         {% if stocks %}
             <div class="stock-grid">
                 {% for stock in stocks %}
-                    <div class="stock-card">
-                        <div class="card-head">
-                            <h2 class="ticker">{{ stock.name }}</h2>
-                            <p class="price">${{ stock.current_price|floatformat:2 }}</p>
-                        </div>
+                    <a class="card-link" href="{% url 'stock_detail' stock.name %}">
+                        <div class="stock-card">
+                            <div class="card-head">
+                                <h2 class="ticker">{{ stock.name }}</h2>
+                                <p class="price">${{ stock.current_price|floatformat:2 }}</p>
+                            </div>
 
-                        <div class="metric-row">
-                            <span class="metric-label">Annual Return</span>
-                            <span class="metric-value {% if stock.annual_return > 0 %}positive{% elif stock.annual_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.annual_return|floatformat:2 }}%</span>
+                            <div class="metric-row">
+                                <span class="metric-label">1 Week Return</span>
+                                <span class="metric-value {% if stock.one_week_return > 0 %}positive{% elif stock.one_week_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.one_week_return|floatformat:2 }}%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">1 Month Return</span>
+                                <span class="metric-value {% if stock.one_month_return > 0 %}positive{% elif stock.one_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.one_month_return|floatformat:2 }}%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">6 Month Return</span>
+                                <span class="metric-value {% if stock.six_month_return > 0 %}positive{% elif stock.six_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.six_month_return|floatformat:2 }}%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">10Y Total Return</span>
+                                <span class="metric-value {% if stock.total_return_10y > 0 %}positive{% elif stock.total_return_10y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.total_return_10y|floatformat:2 }}%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">5Y CAGR</span>
+                                <span class="metric-value {% if stock.cagr_5y > 0 %}positive{% elif stock.cagr_5y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.cagr_5y|floatformat:2 }}%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Volatility</span>
+                                <span class="metric-value">{{ stock.volatility|floatformat:2 }}%</span>
+                            </div>
+
+                            <p class="hint">Click card for deep analysis</p>
                         </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Volatility</span>
-                            <span class="metric-value">{{ stock.volatility|floatformat:2 }}%</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">5Y CAGR</span>
-                            <span class="metric-value {% if stock.cagr_5y > 0 %}positive{% elif stock.cagr_5y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.cagr_5y|floatformat:2 }}%</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">10Y CAGR</span>
-                            <span class="metric-value {% if stock.cagr_10y > 0 %}positive{% elif stock.cagr_10y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.cagr_10y|floatformat:2 }}%</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Max Drawdown</span>
-                            <span class="metric-value negative">{{ stock.max_drawdown|floatformat:2 }}%</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">% From 52W High</span>
-                            <span class="metric-value {% if stock.percent_from_high > 0 %}positive{% elif stock.percent_from_high < 0 %}negative{% else %}neutral{% endif %}">{{ stock.percent_from_high|floatformat:2 }}%</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Above 50 Day MA</span>
-                            <span class="metric-value {% if stock.above_50ma %}positive{% else %}negative{% endif %}">{% if stock.above_50ma %}Yes{% else %}No{% endif %}</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Above 200 Day MA</span>
-                            <span class="metric-value {% if stock.above_200ma %}positive{% else %}negative{% endif %}">{% if stock.above_200ma %}Yes{% else %}No{% endif %}</span>
-                        </div>
-                    </div>
+                    </a>
                 {% endfor %}
             </div>
         {% else %}

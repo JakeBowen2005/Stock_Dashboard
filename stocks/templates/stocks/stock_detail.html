@@ -1,0 +1,238 @@
+{% extends "stocks/base.html" %}
+
+{% block title %}Stock Deep Analysis{% endblock %}
+
+{% block extra_style %}
+    .section-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .panel h3 {
+        margin: 0 0 12px;
+        font-size: 18px;
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin: 8px 0;
+        gap: 16px;
+    }
+
+    .metric-label {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .metric-value {
+        font-size: 14px;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .score {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(116, 152, 196, 0.45);
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .score-positive {
+        background: rgba(65, 197, 122, 0.15);
+        color: var(--pos);
+    }
+
+    .score-neutral {
+        background: rgba(88, 166, 255, 0.15);
+        color: var(--accent);
+    }
+
+    .score-negative {
+        background: rgba(255, 111, 125, 0.15);
+        color: var(--neg);
+    }
+
+    .checks {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text-muted);
+    }
+
+    .checks li {
+        margin-bottom: 6px;
+    }
+
+    .note {
+        margin: 8px 0 0;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .positive {
+        color: var(--pos);
+    }
+
+    .negative {
+        color: var(--neg);
+    }
+
+    .neutral {
+        color: var(--text-main);
+    }
+
+    .error-box {
+        border: 1px solid rgba(255, 111, 125, 0.5);
+        background: rgba(255, 111, 125, 0.1);
+        border-radius: 10px;
+        padding: 16px;
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-shell">
+        <div class="top-bar">
+            <div>
+                {% if stock %}
+                    <h1 class="title">{{ stock.name }} Deep Analysis</h1>
+                    <p class="subtitle">Short-term momentum, long-term growth, risk, and valuation signals</p>
+                {% else %}
+                    <h1 class="title">{{ ticker }} Deep Analysis</h1>
+                {% endif %}
+            </div>
+            <a class="link-btn" href="{% url 'analyze' %}">Back to Dashboard</a>
+        </div>
+
+        {% if error %}
+            <div class="error-box">
+                <strong>Data Error:</strong> {{ error }}
+            </div>
+        {% else %}
+            <div class="panel" style="margin-bottom:16px;">
+                <h3>Overall Buy Snapshot</h3>
+                <div class="metric-row">
+                    <span class="metric-label">Current Price</span>
+                    <span class="metric-value">${{ stock.current_price|floatformat:2 }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Signal Score</span>
+                    <span class="metric-value">{{ signal.positive_count }} / {{ signal.total_count }} positive checks</span>
+                </div>
+
+                <div class="score score-{{ signal.tone }}">{{ signal.label }} Setup</div>
+                <p class="note">{{ signal.message }}</p>
+            </div>
+
+            <div class="section-grid">
+                <div class="panel">
+                    <h3>Short-Term Performance</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">1 Week Return</span>
+                        <span class="metric-value {% if stock.one_week_return > 0 %}positive{% elif stock.one_week_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.one_week_return|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">1 Month Return</span>
+                        <span class="metric-value {% if stock.one_month_return > 0 %}positive{% elif stock.one_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.one_month_return|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">3 Month Return</span>
+                        <span class="metric-value {% if stock.three_month_return > 0 %}positive{% elif stock.three_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.three_month_return|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">6 Month Return</span>
+                        <span class="metric-value {% if stock.six_month_return > 0 %}positive{% elif stock.six_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.six_month_return|floatformat:2 }}%</span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Long-Term Performance</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">5Y CAGR</span>
+                        <span class="metric-value {% if stock.cagr_5y > 0 %}positive{% elif stock.cagr_5y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.cagr_5y|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">10Y CAGR</span>
+                        <span class="metric-value {% if stock.cagr_10y > 0 %}positive{% elif stock.cagr_10y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.cagr_10y|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">10Y Total Return</span>
+                        <span class="metric-value {% if stock.total_return_10y > 0 %}positive{% elif stock.total_return_10y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.total_return_10y|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Annual Return</span>
+                        <span class="metric-value {% if stock.annual_return > 0 %}positive{% elif stock.annual_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.annual_return|floatformat:2 }}%</span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Risk and Technicals</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Volatility</span>
+                        <span class="metric-value">{{ stock.volatility|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Max Drawdown</span>
+                        <span class="metric-value negative">{{ stock.max_drawdown|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">% From 52W High</span>
+                        <span class="metric-value {% if stock.percent_from_high > 0 %}positive{% elif stock.percent_from_high < 0 %}negative{% else %}neutral{% endif %}">{{ stock.percent_from_high|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">% From 52W Low</span>
+                        <span class="metric-value {% if stock.percent_from_low > 0 %}positive{% elif stock.percent_from_low < 0 %}negative{% else %}neutral{% endif %}">{{ stock.percent_from_low|floatformat:2 }}%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Above 50-Day MA</span>
+                        <span class="metric-value {% if stock.above_50ma %}positive{% else %}negative{% endif %}">{% if stock.above_50ma %}Yes{% else %}No{% endif %}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Above 200-Day MA</span>
+                        <span class="metric-value {% if stock.above_200ma %}positive{% else %}negative{% endif %}">{% if stock.above_200ma %}Yes{% else %}No{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Fundamentals and Checks</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">P/E Ratio</span>
+                        <span class="metric-value">{{ stock.pe_ratio|floatformat:2 }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">EPS</span>
+                        <span class="metric-value">{{ stock.eps|floatformat:2 }}</span>
+                    </div>
+                    <p class="note">Signal checklist:</p>
+                    <ul class="checks">
+                        {% for label, passed in signal.checks %}
+                            <li>
+                                <span class="{% if passed %}positive{% else %}negative{% endif %}">
+                                    {% if passed %}Pass{% else %}Flag{% endif %}
+                                </span>
+                                - {{ label }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <p class="note" style="margin-top:16px;">
+                This is a decision-support summary, not financial advice.
+            </p>
+        {% endif %}
+    </div>
+{% endblock %}

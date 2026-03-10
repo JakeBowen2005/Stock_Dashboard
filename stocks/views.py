@@ -6,6 +6,7 @@ from django.shortcuts import redirect, render
 from stock_market_analyzer.Stock_class import Stock
 
 from .forms import SignUpForm
+from .models import WatchList, WatchListItem
 
 
 def _build_signal_snapshot(stock):
@@ -46,6 +47,18 @@ def _build_signal_snapshot(stock):
     }
 
 
+def _get_or_create_user_watchlist(user):
+    watchlist, _ = WatchList.objects.get_or_create(user=user)
+    return watchlist
+
+
+def _get_user_tickers(user):
+    watchlist = _get_or_create_user_watchlist(user)
+    return watchlist, list(
+        watchlist.items.values_list("ticker", flat=True).order_by("ticker")
+    )
+
+
 def signup_view(request):
     if request.user.is_authenticated:
         return redirect("home")
@@ -69,7 +82,11 @@ def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            login(request, form.get_user())
+            user = form.get_user()
+            login(request, user)
+            _, tickers = _get_user_tickers(user)
+            if tickers:
+                return redirect("analyze")
             return redirect("home")
     else:
         form = AuthenticationForm()
@@ -85,22 +102,21 @@ def logout_view(request):
 
 @login_required
 def home(request):
+    watchlist, added_stocks = _get_user_tickers(request.user)
     notice = ""
 
     if request.method == "GET":
-        request.session["added_stocks"] = []
         return render(request, "stocks/home.html", {
-            "added_stocks": [],
+            "added_stocks": added_stocks,
             "notice": notice,
         })
 
-    added_stocks = request.session.get("added_stocks", [])
     action = request.POST.get("action", "add")
     ticker = request.POST.get("ticker", "").strip().upper()
 
     if action == "remove":
         if ticker in added_stocks:
-            added_stocks.remove(ticker)
+            WatchListItem.objects.filter(watchlist=watchlist, ticker=ticker).delete()
             notice = f"Removed {ticker}."
     else:
         if not ticker:
@@ -110,10 +126,10 @@ def home(request):
         elif len(added_stocks) >= 8:
             notice = "You can add up to 8 stocks."
         else:
-            added_stocks.append(ticker)
+            WatchListItem.objects.get_or_create(watchlist=watchlist, ticker=ticker)
             notice = f"Added {ticker}."
 
-    request.session["added_stocks"] = added_stocks
+    _, added_stocks = _get_user_tickers(request.user)
     return render(request, "stocks/home.html", {
         "added_stocks": added_stocks,
         "notice": notice,
@@ -122,7 +138,7 @@ def home(request):
 
 @login_required
 def analyze(request):
-    added_stocks = request.session.get("added_stocks", [])
+    _, added_stocks = _get_user_tickers(request.user)
     stock_summaries = []
 
     for ticker in added_stocks:
@@ -138,6 +154,7 @@ def analyze(request):
 
 @login_required
 def stock_detail(request, ticker):
+    _get_or_create_user_watchlist(request.user)
     ticker = ticker.upper().strip()
 
     try:

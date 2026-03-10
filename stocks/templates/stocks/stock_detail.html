@@ -102,6 +102,33 @@
         padding: 16px;
     }
 
+    .desc-text {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.65;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: none;
+    }
+
+    .desc-text.expanded {
+        display: block;
+        overflow: visible;
+    }
+
+    .desc-toggle {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-size: 12px;
+        cursor: pointer;
+        padding: 4px 0 0;
+        display: block;
+    }
+
     .chart-grid {
         display: grid;
         gap: 16px;
@@ -179,9 +206,10 @@
 
                 <!-- Business description -->
                 {% if stock.description %}
-                    <p style="color:var(--text-muted); font-size:13px; line-height:1.6; margin:0 0 16px; border-left:3px solid var(--border); padding-left:12px;">
-                        {{ stock.description|truncatewords:60 }}
-                    </p>
+                    <div style="border-left:3px solid var(--border); padding-left:12px; margin:0 0 16px;">
+                        <p class="desc-text" id="companyDesc">{{ stock.description }}</p>
+                        <button class="desc-toggle" id="descToggle" onclick="toggleDesc()">Show more</button>
+                    </div>
                 {% endif %}
 
                 <!-- Key profile metrics grid -->
@@ -358,6 +386,19 @@
         {{ long_term_chart|json_script:"long-term-chart-data" }}
         {{ risk_chart|json_script:"risk-chart-data" }}
 
+        <script>
+            function toggleDesc() {
+                const p = document.getElementById("companyDesc");
+                const btn = document.getElementById("descToggle");
+                if (p.classList.contains("expanded")) {
+                    p.classList.remove("expanded");
+                    btn.textContent = "Show more";
+                } else {
+                    p.classList.add("expanded");
+                    btn.textContent = "Show less";
+                }
+            }
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             const shortData = JSON.parse(document.getElementById("short-term-chart-data").textContent);

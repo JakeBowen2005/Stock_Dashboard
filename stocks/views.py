@@ -60,6 +60,37 @@ def _build_signal_snapshot(stock):
     }
 
 
+def _format_currency(value):
+    if value is None:
+        return "—"
+    return f"${value:,.2f}"
+
+
+def _format_percent(value, digits=2):
+    if value is None:
+        return "—"
+    sign = "+" if value > 0 else ""
+    return f"{sign}{value:.{digits}f}%"
+
+
+def _percent_class(value):
+    if value is None:
+        return "pct-neu"
+    if value > 0:
+        return "pct-pos"
+    if value < 0:
+        return "pct-neg"
+    return "pct-neu"
+
+
+def _dashboard_signal(stock):
+    if stock.get("above_200ma") and (stock.get("cagr_5y") or 0) > 8 and (stock.get("one_month_return") or 0) > 0:
+        return "Strong", "sig-strong"
+    if stock.get("above_50ma") or (stock.get("cagr_5y") or 0) > 0:
+        return "Mixed", "sig-mixed"
+    return "Caution", "sig-caution"
+
+
 def _get_or_create_user_watchlist(user):
     watchlist, _ = WatchList.objects.get_or_create(user=user)
     return watchlist
@@ -187,8 +218,57 @@ def analyze(request):
         except Exception as exc:
             print(f"[analyze] failed ticker {ticker}: {exc}")
             failed_tickers.append(ticker)
+
+    rows = []
+    for stock in stock_summaries:
+        signal_label, signal_class = _dashboard_signal(stock)
+        rows.append(
+            {
+                "name": stock.get("name", "—"),
+                "company_name": stock.get("company_name") or "Data unavailable",
+                "current_price_display": _format_currency(stock.get("current_price")),
+                "one_week_display": _format_percent(stock.get("one_week_return")),
+                "one_week_class": _percent_class(stock.get("one_week_return")),
+                "one_month_display": _format_percent(stock.get("one_month_return")),
+                "one_month_class": _percent_class(stock.get("one_month_return")),
+                "six_month_display": _format_percent(stock.get("six_month_return")),
+                "six_month_class": _percent_class(stock.get("six_month_return")),
+                "cagr_5y_display": _format_percent(stock.get("cagr_5y")),
+                "cagr_5y_class": _percent_class(stock.get("cagr_5y")),
+                "volatility_display": _format_percent(stock.get("volatility"), digits=1),
+                "signal_label": signal_label,
+                "signal_class": signal_class,
+            }
+        )
+
+    def _average(values):
+        valid = [v for v in values if v is not None]
+        if not valid:
+            return None
+        return sum(valid) / len(valid)
+
+    portfolio = {
+        "stocks_loaded": len(rows),
+        "avg_one_month": _average([s.get("one_month_return") for s in stock_summaries]),
+        "avg_six_month": _average([s.get("six_month_return") for s in stock_summaries]),
+        "avg_cagr_5y": _average([s.get("cagr_5y") for s in stock_summaries]),
+        "above_200ma_count": sum(1 for s in stock_summaries if s.get("above_200ma") is True),
+        "price_sum": sum((s.get("current_price") or 0) for s in stock_summaries),
+    }
+
+    stock_count = len(rows)
+    if stock_count >= 7:
+        table_min_width = 1280
+    elif stock_count >= 4:
+        table_min_width = 1160
+    else:
+        table_min_width = 1040
+
     return render(request, "stocks/dashboard.html", {
         "stocks": stock_summaries,
+        "rows": rows,
+        "portfolio": portfolio,
+        "table_min_width": table_min_width,
         "failed_tickers": failed_tickers,
         "alert_tickers": added_stocks,
     })

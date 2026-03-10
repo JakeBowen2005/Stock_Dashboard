@@ -1,161 +1,254 @@
 {% extends "stocks/base.html" %}
-
-{% block title %}Stock Market Analyzer{% endblock %}
+{% block title %}Watchlist — Market{% endblock %}
 
 {% block extra_style %}
     .home-wrap {
-        min-height: calc(100vh - 82px);
+        min-height: calc(100vh - 54px);
         display: flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
+        padding: 40px 24px;
+    }
+
+    .home-box { width: 100%; max-width: 500px; }
+
+    .home-brand {
+        text-align: center;
+        margin-bottom: 36px;
+    }
+
+    .home-brand .logo {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .home-brand .logo span { color: var(--accent); }
+
+    .home-brand p {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--text-muted);
     }
 
     .home-card {
-        width: min(460px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 28px;
     }
 
-    .home-card .title {
-        text-align: center;
-    }
-
-    .home-card .subtitle {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    .ticker-form {
-        display: grid;
-        gap: 10px;
-    }
-
-    input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        font-size: 14px;
-        border-radius: 8px;
-        border: 1px solid rgba(116, 152, 196, 0.35);
-        background: rgba(7, 17, 32, 0.7);
-        color: var(--text-main);
-        text-transform: uppercase;
-    }
-
-    input[type="text"]::placeholder {
-        color: #8ea3c3;
-    }
-
-    .notice {
-        margin: 0 0 14px;
-        border-radius: 8px;
-        padding: 8px 10px;
+    .home-card-title {
         font-size: 13px;
-        color: var(--text-main);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
     }
 
-    .notice-error {
-        border: 1px solid rgba(255, 111, 125, 0.5);
-        background: rgba(255, 111, 125, 0.12);
-    }
-
-    .notice-info {
-        border: 1px solid rgba(88, 166, 255, 0.45);
-        background: rgba(88, 166, 255, 0.12);
-    }
-
-    .added-stocks {
-        margin-top: 20px;
-        max-height: 140px;
-        overflow-y: auto;
-        border-top: 1px solid rgba(116, 152, 196, 0.25);
-        padding-top: 12px;
-    }
-
-    .added-stocks h4 {
-        margin: 0 0 10px;
-    }
-
-    .stock-list {
+    .add-row {
         display: flex;
-        flex-wrap: wrap;
         gap: 8px;
     }
 
-    .stock-pill {
+    .add-row input {
+        flex: 1;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        padding: 9px 14px;
+        text-transform: uppercase;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+
+    .add-row input:focus { border-color: var(--accent); }
+    .add-row input::placeholder { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-muted); }
+
+    .add-row .add-btn {
+        padding: 9px 18px;
+        background: var(--accent);
+        border: none;
+        border-radius: 6px;
+        color: #000;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s;
+        white-space: nowrap;
+    }
+
+    .add-row .add-btn:hover { background: #7dd3fc; }
+
+    .notice {
+        margin: 14px 0 0;
+        padding: 9px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .notice-error { background: var(--neg-dim); border: 1px solid rgba(248,113,113,0.2); color: #fca5a5; }
+    .notice-info  { background: var(--pos-dim); border: 1px solid rgba(74,222,128,0.2); color: #86efac; }
+
+    .watchlist-section {
+        margin-top: 22px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .watchlist-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .watchlist-header span {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .watchlist-header .count {
+        font-size: 12px;
+        color: var(--text-muted);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .ticker-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .ticker-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(56,189,248,0.08);
+        border: 1px solid rgba(56,189,248,0.18);
+        border-radius: 5px;
+        padding: 5px 8px 5px 11px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        color: var(--accent);
+    }
+
+    .chip-remove {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
+        border-radius: 3px;
+        transition: color 0.15s;
+        display: flex;
+        align-items: center;
+    }
+
+    .chip-remove:hover { color: var(--neg); }
+
+    .empty-watch {
+        font-size: 13px;
+        color: var(--text-muted);
+        padding: 4px 0;
+    }
+
+    .analyze-btn {
+        display: flex;
+        justify-content: center;
+        margin-top: 24px;
+    }
+
+    .analyze-btn a {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background-color: rgba(88, 166, 255, 0.24);
-        border: 1px solid rgba(88, 166, 255, 0.5);
-        color: var(--text-main);
-        padding: 6px 8px 6px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
+        background: var(--accent);
+        color: #000;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 11px 32px;
+        border-radius: 7px;
+        text-decoration: none;
+        transition: background 0.15s;
+        letter-spacing: 0.1px;
     }
 
-    .remove-btn {
-        padding: 2px 6px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.35);
-        background: rgba(255, 111, 125, 0.18);
-        color: var(--text-main);
-        font-size: 11px;
-        line-height: 1;
-    }
-
-    .actions {
-        margin-top: 20px;
-    }
-
-    .actions form,
-    .actions button {
-        width: 100%;
-    }
+    .analyze-btn a:hover { background: #7dd3fc; }
+    .analyze-btn a.disabled { opacity: 0.35; pointer-events: none; }
 {% endblock %}
 
 {% block content %}
-    <div class="home-wrap">
-        <div class="page-shell home-card">
-            <h1 class="title">Stock Dashboard Watchlist</h1>
-            <p class="subtitle">Add up to 8 ticker symbols to your Watchlist.</p>
+<div class="home-wrap">
+    <div class="home-box">
+        <div class="home-brand">
+            <div class="logo">◆ <span>MARKET</span></div>
+            <p>Professional stock analysis &amp; alerts</p>
+        </div>
 
-            {% if notice %}
-                <p class="notice {% if 'not a recognized' in notice or 'already' in notice %}notice-error{% else %}notice-info{% endif %}">{{ notice }}</p>
-            {% endif %}
+        <div class="home-card">
+            <div class="home-card-title">Watchlist</div>
 
-            <form method="post" class="ticker-form">
+            <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add">
-                <input type="text" name="ticker" placeholder="AAPL, NVDA, MSFT" autocomplete="off">
-                <button type="submit">Add Stock</button>
+                <div class="add-row">
+                    <input type="text" name="ticker" placeholder="Enter ticker symbol" autocomplete="off" maxlength="10">
+                    <button class="add-btn" type="submit">+ Add</button>
+                </div>
             </form>
 
-            <div class="added-stocks">
-                <h4>Stocks Added (Max 8)</h4>
+            {% if notice %}
+                <div class="notice {% if 'not a recognized' in notice or 'already' in notice %}notice-error{% else %}notice-info{% endif %}">{{ notice }}</div>
+            {% endif %}
+
+            <div class="watchlist-section">
+                <div class="watchlist-header">
+                    <span>Added stocks</span>
+                    <span class="count">{{ added_stocks|length }} / 8</span>
+                </div>
+
                 {% if added_stocks %}
-                    <div class="stock-list">
+                    <div class="ticker-grid">
                         {% for stock in added_stocks %}
-                            <span class="stock-pill">
+                            <span class="ticker-chip">
                                 {{ stock }}
                                 <form method="post" style="display:inline; margin:0;">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="remove">
                                     <input type="hidden" name="ticker" value="{{ stock }}">
-                                    <button type="submit" class="remove-btn" aria-label="Remove {{ stock }}">x</button>
+                                    <button type="submit" class="chip-remove" aria-label="Remove {{ stock }}">✕</button>
                                 </form>
                             </span>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="muted" style="font-size:13px; margin:0;">No stocks added yet.</p>
+                    <p class="empty-watch">No stocks added yet.</p>
                 {% endif %}
             </div>
+        </div>
 
-            <div class="actions">
-                <form method="post" action="{% url 'analyze' %}">
-                    {% csrf_token %}
-                    <button type="submit" {% if not added_stocks %}disabled{% endif %}>Analyze Stocks</button>
-                </form>
-            </div>
+        <div class="analyze-btn">
+            <a href="{% url 'analyze' %}" class="{% if not added_stocks %}disabled{% endif %}">
+                Run Analysis →
+            </a>
         </div>
     </div>
+</div>
 {% endblock %}

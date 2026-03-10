@@ -1,89 +1,140 @@
 {% extends "stocks/base.html" %}
-
-{% block title %}Sign Up{% endblock %}
+{% block title %}Sign up — Market{% endblock %}
 
 {% block extra_style %}
     .auth-wrap {
-        min-height: calc(100vh - 82px);
+        min-height: calc(100vh - 54px);
         display: flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
+        padding: 40px 24px;
     }
+
+    .auth-box { width: 100%; max-width: 420px; }
+
+    .auth-logo {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .auth-logo .logo {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .auth-logo .logo span { color: var(--accent); }
+    .auth-logo p { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
 
     .auth-card {
-        width: min(500px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 28px;
     }
 
-    .auth-card .title {
-        text-align: center;
-    }
-
-    .auth-card .subtitle {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    form {
-        display: grid;
-        gap: 10px;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 6px;
-        color: var(--text-muted);
-        font-size: 13px;
-    }
-
-    input {
-        width: 100%;
-        padding: 10px;
-        font-size: 14px;
-        border-radius: 8px;
-        border: 1px solid rgba(116, 152, 196, 0.35);
-        background: rgba(7, 17, 32, 0.7);
+    .auth-card h2 {
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 22px;
         color: var(--text-main);
     }
 
+    .field-group { margin-bottom: 14px; }
+
+    .field-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.3px;
+    }
+
+    .field-group input {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 13px;
+        padding: 9px 12px;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+
+    .field-group input:focus { border-color: var(--accent); }
+
     .helptext {
         display: block;
-        margin-top: 6px;
+        margin-top: 5px;
+        font-size: 11px;
         color: var(--text-muted);
-        font-size: 12px;
         line-height: 1.4;
     }
 
     .errorlist {
         list-style: none;
-        margin: 8px 0 0;
+        margin: 6px 0 0;
         padding: 8px 10px;
-        border-radius: 8px;
-        background: rgba(255, 111, 125, 0.15);
-        border: 1px solid rgba(255, 111, 125, 0.35);
-        color: #ffd4d8;
-        font-size: 13px;
+        background: var(--neg-dim);
+        border: 1px solid rgba(248,113,113,0.2);
+        border-radius: 5px;
+        color: #fca5a5;
+        font-size: 12px;
     }
 
-    .switch-link {
-        margin-top: 14px;
-        text-align: center;
-        color: var(--text-muted);
-        font-size: 13px;
+    .submit-btn {
+        width: 100%;
+        margin-top: 6px;
+        padding: 10px;
+        background: var(--accent);
+        border: none;
+        border-radius: 6px;
+        color: #000;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s;
     }
+
+    .submit-btn:hover { background: #7dd3fc; }
+
+    .auth-footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .auth-footer a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .auth-footer a:hover { text-decoration: underline; }
 {% endblock %}
 
 {% block content %}
-    <div class="auth-wrap">
-        <div class="page-shell auth-card">
-            <h1 class="title">Create Account</h1>
-            <p class="subtitle">Sign up with email, username, and password.</p>
+<div class="auth-wrap">
+    <div class="auth-box">
+        <div class="auth-logo">
+            <div class="logo">◆ <span>MARKET</span></div>
+            <p>Create your free account</p>
+        </div>
+
+        <div class="auth-card">
+            <h2>Get started</h2>
 
             <form method="post">
                 {% csrf_token %}
                 {{ form.non_field_errors }}
 
                 {% for field in form %}
-                    <div>
+                    <div class="field-group">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
                         {% if field.help_text %}
@@ -93,13 +144,13 @@
                     </div>
                 {% endfor %}
 
-                <button type="submit">Create Account</button>
+                <button type="submit" class="submit-btn">Create account</button>
             </form>
+        </div>
 
-            <p class="switch-link">
-                Already have an account?
-                <a class="link-btn" href="{% url 'login' %}" style="padding:6px 10px; font-size:12px;">Login</a>
-            </p>
+        <div class="auth-footer">
+            Already have an account? <a href="{% url 'login' %}">Log in</a>
         </div>
     </div>
+</div>
 {% endblock %}

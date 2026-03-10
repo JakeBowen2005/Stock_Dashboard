@@ -1,197 +1,312 @@
 {% extends "stocks/base.html" %}
-
-{% block title %}Stock Dashboard{% endblock %}
+{% block title %}Dashboard — Market{% endblock %}
 
 {% block extra_style %}
-    .stock-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 16px;
+    .page-shell.dashboard-shell {
+        max-width: min(1620px, calc(100vw - 24px));
+        padding-left: 12px;
+        padding-right: 12px;
     }
 
-    .card-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-
-    .stock-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
-        transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-
-    .card-link:hover .stock-card {
-        transform: translateY(-2px);
-        border-color: rgba(88, 166, 255, 0.55);
-    }
-
-    .card-head {
+    .dash-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(116, 152, 196, 0.2);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
-    .ticker {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 700;
-        letter-spacing: 0.7px;
-    }
+    .dash-title { font-size: 18px; font-weight: 700; }
+    .dash-sub   { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
 
-    .price {
-        margin: 0;
-        color: var(--accent);
-        font-weight: 700;
-        font-size: 18px;
-    }
-
-    .metric-row {
+    .dash-actions {
         display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin: 8px 0;
-        gap: 16px;
+        gap: 8px;
+        align-items: center;
     }
 
-    .metric-label {
+    .fail-banner {
+        background: var(--neg-dim);
+        border: 1px solid rgba(248,113,113,0.2);
+        border-radius: 7px;
+        padding: 10px 16px;
+        margin-bottom: 20px;
+        font-size: 12px;
+        color: #fca5a5;
+    }
+
+    .fail-banner strong { color: var(--neg); }
+
+    .portfolio-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .portfolio-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+    }
+
+    .portfolio-label {
+        font-size: 11px;
         color: var(--text-muted);
-        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
 
-    .metric-value {
-        font-size: 14px;
-        font-weight: 600;
-        text-align: right;
+    .portfolio-value {
+        margin-top: 6px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
     }
 
-    .positive {
-        color: var(--pos);
-    }
-
-    .negative {
-        color: var(--neg);
-    }
-
-    .neutral {
-        color: var(--text-main);
-    }
-
-    .hint {
-        margin-top: 12px;
+    .portfolio-sub {
+        margin-top: 2px;
         font-size: 12px;
         color: var(--text-muted);
     }
 
-    .empty-state {
-        border: 1px dashed rgba(116, 152, 196, 0.35);
-        border-radius: 10px;
-        padding: 26px;
-        text-align: center;
-        color: var(--text-muted);
-        font-size: 15px;
-    }
-
-    .dashboard-actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-bottom: 14px;
-        flex-wrap: wrap;
-    }
-
-    .dashboard-actions select {
-        min-width: 150px;
-        background: var(--card);
-        border: 1px solid var(--border);
+    /* ── Stock table ─────────────────────────────────── */
+    .stock-table-wrap {
+        overflow-x: auto;
         border-radius: 8px;
-        color: var(--text-main);
-        padding: 8px 10px;
-        font-size: 13px;
+        border: 1px solid var(--border);
     }
 
-    .dashboard-actions form {
-        margin: 0;
+    .stock-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: var(--table-min-width, 1040px);
+    }
+
+    .stock-table thead tr {
+        background: rgba(255,255,255,0.03);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stock-table th {
+        text-align: right;
+        padding: 12px 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        white-space: nowrap;
+    }
+
+    .stock-table th:first-child { text-align: left; }
+
+    .stock-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+
+    .stock-table tbody tr:last-child { border-bottom: none; }
+
+    .stock-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    .stock-table td {
+        padding: 14px 16px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .stock-table td:first-child { text-align: left; }
+
+    .td-ticker {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: var(--text-main);
+    }
+
+    .td-company {
+        font-size: 12px;
+        color: var(--text-muted);
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .td-price {
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .pct-pos { color: var(--pos); font-weight: 500; }
+    .pct-neg { color: var(--neg); font-weight: 500; }
+    .pct-neu { color: var(--text-muted); }
+
+    .signal-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+    .sig-strong { background: var(--pos-dim); color: var(--pos); border: 1px solid rgba(74,222,128,0.2); }
+    .sig-mixed  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(56,189,248,0.2); }
+    .sig-caution{ background: var(--neg-dim); color: var(--neg); border: 1px solid rgba(248,113,113,0.2); }
+
+    .detail-arrow {
+        color: var(--text-muted);
+        font-size: 14px;
+        padding-left: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+        color: var(--text-muted);
+        font-size: 14px;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+    }
+
+    .empty-state a { color: var(--accent); text-decoration: none; }
+
+    .table-col-ticker { width: 112px; }
+    .table-col-company { width: 260px; }
+    .table-col-metric { width: 122px; }
+    .table-col-signal { width: 138px; }
+    .table-col-arrow { width: 38px; }
+
+    @media (max-width: 980px) {
+        .page-shell.dashboard-shell {
+            max-width: 100%;
+            padding-left: 8px;
+            padding-right: 8px;
+        }
     }
 {% endblock %}
 
 {% block content %}
-    <div class="page-shell">
-        <div class="top-bar">
-            <div>
-                <h1 class="title">Stock Dashboard</h1>
-                <p class="subtitle">Summary metrics for your selected stocks</p>
-            </div>
-            <a class="link-btn" href="{% url 'home' %}">Add to Watchlist</a>
+<div class="page-shell dashboard-shell">
+    <div class="dash-header">
+        <div>
+            <div class="dash-title">Dashboard</div>
+            <div class="dash-sub">Live performance metrics for your watchlist</div>
         </div>
-
-        {% if failed_tickers %}
-            <div style="background:rgba(255,111,125,0.1); border:1px solid rgba(255,111,125,0.4); border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--text-muted);">
-                Could not load data for: <strong style="color:var(--neg);">{{ failed_tickers|join:", " }}</strong> — these tickers may be invalid, delisted, or missing financial data.
-            </div>
-        {% endif %}
-
-        {% if stocks %}
-            <div class="dashboard-actions">
-                <form method="get" action="{% url 'alerts' %}">
-                    <select name="ticker">
-                        {% for ticker in alert_tickers %}
-                            <option value="{{ ticker }}">{{ ticker }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">Set Alert</button>
-                </form>
-            </div>
-            <div class="stock-grid">
-                {% for stock in stocks %}
-                    <a class="card-link" href="{% url 'stock_detail' stock.name %}">
-                        <div class="stock-card">
-                            <div class="card-head">
-                                <h2 class="ticker">{{ stock.name }}</h2>
-                                <p class="price">${{ stock.current_price|floatformat:2 }}</p>
-                            </div>
-
-                            <div class="metric-row">
-                                <span class="metric-label">1 Week Return</span>
-                                <span class="metric-value {% if stock.one_week_return > 0 %}positive{% elif stock.one_week_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.one_week_return|floatformat:2 }}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">1 Month Return</span>
-                                <span class="metric-value {% if stock.one_month_return > 0 %}positive{% elif stock.one_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.one_month_return|floatformat:2 }}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">6 Month Return</span>
-                                <span class="metric-value {% if stock.six_month_return > 0 %}positive{% elif stock.six_month_return < 0 %}negative{% else %}neutral{% endif %}">{{ stock.six_month_return|floatformat:2 }}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">10Y Total Return</span>
-                                <span class="metric-value {% if stock.total_return_10y > 0 %}positive{% elif stock.total_return_10y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.total_return_10y|floatformat:2 }}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">5Y CAGR</span>
-                                <span class="metric-value {% if stock.cagr_5y > 0 %}positive{% elif stock.cagr_5y < 0 %}negative{% else %}neutral{% endif %}">{{ stock.cagr_5y|floatformat:2 }}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">Volatility</span>
-                                <span class="metric-value">{{ stock.volatility|floatformat:2 }}%</span>
-                            </div>
-
-                            <p class="hint">Click card for deep analysis</p>
-                        </div>
-                    </a>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                No stock data to display. Add tickers on the home page, then run analysis.
-            </div>
-        {% endif %}
+        <div class="dash-actions">
+            <a class="btn" href="{% url 'alerts' %}">Set Alerts</a>
+            <a class="btn" href="{% url 'home' %}">Edit Watchlist</a>
+        </div>
     </div>
+
+    {% if rows %}
+        <div class="portfolio-grid">
+            <div class="portfolio-card">
+                <div class="portfolio-label">Stocks Loaded</div>
+                <div class="portfolio-value">{{ portfolio.stocks_loaded }}</div>
+                <div class="portfolio-sub">From your watchlist</div>
+            </div>
+            <div class="portfolio-card">
+                <div class="portfolio-label">Avg 1M Return</div>
+                <div class="portfolio-value {% if portfolio.avg_one_month > 0 %}pct-pos{% elif portfolio.avg_one_month < 0 %}pct-neg{% else %}pct-neu{% endif %}">
+                    {% if portfolio.avg_one_month or portfolio.avg_one_month == 0 %}
+                        {% if portfolio.avg_one_month > 0 %}+{% endif %}{{ portfolio.avg_one_month|floatformat:2 }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="portfolio-sub">Short-term momentum</div>
+            </div>
+            <div class="portfolio-card">
+                <div class="portfolio-label">Avg 6M Return</div>
+                <div class="portfolio-value {% if portfolio.avg_six_month > 0 %}pct-pos{% elif portfolio.avg_six_month < 0 %}pct-neg{% else %}pct-neu{% endif %}">
+                    {% if portfolio.avg_six_month or portfolio.avg_six_month == 0 %}
+                        {% if portfolio.avg_six_month > 0 %}+{% endif %}{{ portfolio.avg_six_month|floatformat:2 }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="portfolio-sub">Medium-term trend</div>
+            </div>
+            <div class="portfolio-card">
+                <div class="portfolio-label">Avg 5Y CAGR</div>
+                <div class="portfolio-value {% if portfolio.avg_cagr_5y > 0 %}pct-pos{% elif portfolio.avg_cagr_5y < 0 %}pct-neg{% else %}pct-neu{% endif %}">
+                    {% if portfolio.avg_cagr_5y or portfolio.avg_cagr_5y == 0 %}
+                        {% if portfolio.avg_cagr_5y > 0 %}+{% endif %}{{ portfolio.avg_cagr_5y|floatformat:2 }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="portfolio-sub">Long-term quality</div>
+            </div>
+            <div class="portfolio-card">
+                <div class="portfolio-label">Above 200-Day MA</div>
+                <div class="portfolio-value">{{ portfolio.above_200ma_count }} / {{ portfolio.stocks_loaded }}</div>
+                <div class="portfolio-sub">Trend strength check</div>
+            </div>
+            <div class="portfolio-card">
+                <div class="portfolio-label">Price Sum</div>
+                <div class="portfolio-value">${{ portfolio.price_sum|floatformat:2 }}</div>
+                <div class="portfolio-sub">Watchlist price snapshot</div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if failed_tickers %}
+        <div class="fail-banner">
+            Could not load: <strong>{{ failed_tickers|join:", " }}</strong> — may be invalid, delisted, or missing data.
+        </div>
+    {% endif %}
+
+    {% if rows %}
+        <div class="stock-table-wrap" style="--table-min-width: {{ table_min_width }}px;">
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th class="table-col-ticker" style="text-align:left;">Ticker</th>
+                        <th class="table-col-company" style="text-align:left; padding-left:0;">Company</th>
+                        <th class="table-col-metric">Price</th>
+                        <th class="table-col-metric">1W</th>
+                        <th class="table-col-metric">1M</th>
+                        <th class="table-col-metric">6M</th>
+                        <th class="table-col-metric">5Y CAGR</th>
+                        <th class="table-col-metric">Volatility</th>
+                        <th class="table-col-signal">Signal</th>
+                        <th class="table-col-arrow"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr onclick="window.location='{% url 'stock_detail' row.name %}'">
+                        <td class="td-ticker">{{ row.name }}</td>
+                        <td class="td-company" style="text-align:left; padding-left:0;">{{ row.company_name }}</td>
+                        <td class="td-price">{{ row.current_price_display }}</td>
+                        <td class="{{ row.one_week_class }}">{{ row.one_week_display }}</td>
+                        <td class="{{ row.one_month_class }}">{{ row.one_month_display }}</td>
+                        <td class="{{ row.six_month_class }}">{{ row.six_month_display }}</td>
+                        <td class="{{ row.cagr_5y_class }}">{{ row.cagr_5y_display }}</td>
+                        <td class="pct-neu">{{ row.volatility_display }}</td>
+                        <td>
+                            <span class="signal-pill {{ row.signal_class }}">● {{ row.signal_label }}</span>
+                        </td>
+                        <td class="detail-arrow">›</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            No stocks loaded. <a href="{% url 'home' %}">Add tickers to your watchlist</a> first.
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

@@ -1,4 +1,3 @@
-import base64
 import json
 import os
 
@@ -6,24 +5,26 @@ from pywebpush import WebPushException, webpush
 
 
 def _vapid_private_key():
-    raw = os.getenv("VAPID_PRIVATE_KEY", "")
+    """
+    Return VAPID private key for pywebpush.
+    Supports PEM strings, base64-encoded PEM, and raw base64url DER.
+    pywebpush accepts PEM directly when the string contains '-----'.
+    """
+    import base64
+    raw = os.getenv("VAPID_PRIVATE_KEY", "").strip()
     if not raw:
         return None
-    raw = raw.strip()
 
-    # Accept direct PEM strings.
-    if "BEGIN" in raw:
-        return raw
+    # If it looks like base64-encoded PEM, decode it first.
+    if not raw.startswith("-----"):
+        try:
+            decoded = base64.b64decode(raw + "==").decode("utf-8")
+            if "-----" in decoded:
+                return decoded.strip()
+        except Exception:
+            pass
 
-    # Accept base64-encoded PEM if provided that way.
-    try:
-        decoded = base64.b64decode(raw).decode("utf-8")
-        if "BEGIN" in decoded:
-            return decoded
-    except Exception:
-        pass
-
-    # Fallback: return raw key string (some setups use raw URL-safe key format).
+    # Return PEM as-is (pywebpush handles it natively) or raw base64url DER.
     return raw
 
 

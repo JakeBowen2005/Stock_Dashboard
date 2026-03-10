@@ -190,12 +190,8 @@
                     <div>
                         <h3 style="margin:0 0 4px;">{{ stock.company_name }}</h3>
                         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                            {% if stock.sector != "N/A" %}
-                                <span style="background:rgba(88,166,255,0.15); color:var(--accent); border:1px solid rgba(88,166,255,0.3); border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600;">{{ stock.sector }}</span>
-                            {% endif %}
-                            {% if stock.industry != "N/A" %}
-                                <span style="color:var(--text-muted); font-size:13px;">{{ stock.industry }}</span>
-                            {% endif %}
+                            <span style="background:rgba(88,166,255,0.15); color:var(--accent); border:1px solid rgba(88,166,255,0.3); border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600;">{{ stock.sector }}</span>
+                            <span style="color:var(--text-muted); font-size:13px;">{{ stock.industry }}</span>
                         </div>
                     </div>
                     <div style="text-align:right;">
@@ -205,12 +201,10 @@
                 </div>
 
                 <!-- Business description -->
-                {% if stock.description %}
-                    <div style="border-left:3px solid var(--border); padding-left:12px; margin:0 0 16px;">
-                        <p class="desc-text" id="companyDesc">{{ stock.description }}</p>
-                        <button class="desc-toggle" id="descToggle" onclick="toggleDesc()">Show more</button>
-                    </div>
-                {% endif %}
+                <div style="border-left:3px solid var(--border); padding-left:12px; margin:0 0 16px;">
+                    <p class="desc-text" id="companyDesc">{{ stock.description }}</p>
+                    <button class="desc-toggle" id="descToggle" onclick="toggleDesc()">Show more</button>
+                </div>
 
                 <!-- Key price snapshot tiles -->
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:16px;">

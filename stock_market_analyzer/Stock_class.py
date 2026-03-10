@@ -1,6 +1,7 @@
 from . import data_loader
 from . import stock_metrics
 import pandas as pd
+import time
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
@@ -52,16 +53,28 @@ class Stock:
         self.roe = stock_metrics.return_on_equity(self.financials, self.balance_sheet)
         self.debt_to_equity = stock_metrics.debt_to_equity(self.balance_sheet)
 
-        # Company profile from yfinance info
-        try:
-            info = self.ticker.info or {}
-        except Exception:
-            info = {}
+        # Company profile from yfinance info (with retries/fallbacks)
+        info = {}
+        for _ in range(2):
+            try:
+                info = self.ticker.info or {}
+                if info:
+                    break
+            except Exception:
+                info = {}
+                time.sleep(0.3)
+
+        if not info:
+            try:
+                info = self.ticker.get_info() or {}
+            except Exception:
+                info = {}
+
         self.company_name = info.get("longName") or info.get("shortName") or self.name
-        self.sector = info.get("sector") or "N/A"
-        self.industry = info.get("industry") or "N/A"
+        self.sector = info.get("sector") or "Data unavailable"
+        self.industry = info.get("industry") or "Data unavailable"
         self.market_cap = info.get("marketCap")
-        self.description = info.get("longBusinessSummary") or ""
+        self.description = info.get("longBusinessSummary") or f"{self.company_name} profile data is currently unavailable from the provider."
         self.employees = info.get("fullTimeEmployees")
         self.dividend_yield = info.get("dividendYield")
         self.beta = info.get("beta")

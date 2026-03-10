@@ -45,12 +45,20 @@
 
     .notice {
         margin: 0 0 14px;
-        border: 1px solid rgba(88, 166, 255, 0.45);
-        background: rgba(88, 166, 255, 0.12);
-        color: var(--text-main);
         border-radius: 8px;
         padding: 8px 10px;
         font-size: 13px;
+        color: var(--text-main);
+    }
+
+    .notice-error {
+        border: 1px solid rgba(255, 111, 125, 0.5);
+        background: rgba(255, 111, 125, 0.12);
+    }
+
+    .notice-info {
+        border: 1px solid rgba(88, 166, 255, 0.45);
+        background: rgba(88, 166, 255, 0.12);
     }
 
     .added-stocks {
@@ -111,7 +119,7 @@
             <p class="subtitle">Add up to 8 ticker symbols to your Watchlist.</p>
 
             {% if notice %}
-                <p class="notice">{{ notice }}</p>
+                <p class="notice {% if 'not a recognized' in notice or 'already' in notice %}notice-error{% else %}notice-info{% endif %}">{{ notice }}</p>
             {% endif %}
 
             <form method="post" class="ticker-form">

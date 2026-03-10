@@ -109,6 +109,12 @@
             <a class="link-btn" href="{% url 'home' %}">Add to Watchlist</a>
         </div>
 
+        {% if failed_tickers %}
+            <div style="background:rgba(255,111,125,0.1); border:1px solid rgba(255,111,125,0.4); border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--text-muted);">
+                Could not load data for: <strong style="color:var(--neg);">{{ failed_tickers|join:", " }}</strong> — these tickers may be invalid, delisted, or missing financial data.
+            </div>
+        {% endif %}
+
         {% if stocks %}
             <div class="stock-grid">
                 {% for stock in stocks %}

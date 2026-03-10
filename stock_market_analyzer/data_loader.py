@@ -3,6 +3,13 @@ import yfinance as yf
 def get_ticker(ticker):
     return yf.Ticker(ticker)
 
+def is_valid_ticker(ticker):
+    try:
+        hist = yf.Ticker(ticker).history(period="5d")
+        return not hist.empty
+    except Exception:
+        return False
+
 def get_history(ticker, period):
     return ticker.history(period=period, auto_adjust=False)
 

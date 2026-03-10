@@ -101,6 +101,41 @@
         border-radius: 10px;
         padding: 16px;
     }
+
+    .chart-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, 1fr);
+        margin-bottom: 16px;
+    }
+
+    @media (max-width: 960px) {
+        .chart-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 16px 14px;
+    }
+
+    .chart-panel h3 {
+        margin: 0 0 2px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .chart-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin: 0 0 14px;
+    }
+
+    .chart-wrap {
+        position: relative;
+        height: 240px;
+    }
 {% endblock %}
 
 {% block content %}
@@ -123,18 +158,92 @@
             </div>
         {% else %}
             <div class="panel" style="margin-bottom:16px;">
-                <h3>Overall Buy Snapshot</h3>
-                <div class="metric-row">
-                    <span class="metric-label">Current Price</span>
-                    <span class="metric-value">${{ stock.current_price|floatformat:2 }}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Signal Score</span>
-                    <span class="metric-value">{{ signal.positive_count }} / {{ signal.total_count }} positive checks</span>
+                <!-- Header: company name + price -->
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                    <div>
+                        <h3 style="margin:0 0 4px;">{{ stock.company_name }}</h3>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            {% if stock.sector != "N/A" %}
+                                <span style="background:rgba(88,166,255,0.15); color:var(--accent); border:1px solid rgba(88,166,255,0.3); border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600;">{{ stock.sector }}</span>
+                            {% endif %}
+                            {% if stock.industry != "N/A" %}
+                                <span style="color:var(--text-muted); font-size:13px;">{{ stock.industry }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:28px; font-weight:700; color:var(--text-main);">${{ stock.current_price|floatformat:2 }}</div>
+                        <div style="font-size:12px; color:var(--text-muted);">Current Price</div>
+                    </div>
                 </div>
 
-                <div class="score score-{{ signal.tone }}">{{ signal.label }} Setup</div>
-                <p class="note">{{ signal.message }}</p>
+                <!-- Business description -->
+                {% if stock.description %}
+                    <p style="color:var(--text-muted); font-size:13px; line-height:1.6; margin:0 0 16px; border-left:3px solid var(--border); padding-left:12px;">
+                        {{ stock.description|truncatewords:60 }}
+                    </p>
+                {% endif %}
+
+                <!-- Key profile metrics grid -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:16px;">
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Market Cap</div>
+                        <div style="font-size:15px; font-weight:700;">{{ market_cap_display }}</div>
+                    </div>
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Employees</div>
+                        <div style="font-size:15px; font-weight:700;">{{ employees_display }}</div>
+                    </div>
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Beta</div>
+                        <div style="font-size:15px; font-weight:700;">{% if stock.beta %}{{ stock.beta }}{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Dividend Yield</div>
+                        <div style="font-size:15px; font-weight:700;">{% if stock.dividend_yield %}{{ stock.dividend_yield }}%{% else %}—{% endif %}</div>
+                    </div>
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Forward P/E</div>
+                        <div style="font-size:15px; font-weight:700;">{% if stock.forward_pe %}{{ stock.forward_pe }}{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Price / Book</div>
+                        <div style="font-size:15px; font-weight:700;">{% if stock.price_to_book %}{{ stock.price_to_book }}{% else %}N/A{% endif %}</div>
+                    </div>
+                </div>
+
+                <!-- Signal score -->
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:14px; border-top:1px solid var(--border);">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Signal Score: {{ signal.positive_count }} / {{ signal.total_count }} checks passed</div>
+                        <div class="score score-{{ signal.tone }}">{{ signal.label }} Setup</div>
+                    </div>
+                    <p class="note" style="margin:0; max-width:320px;">{{ signal.message }}</p>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-panel">
+                    <h3>Short-Term Momentum</h3>
+                    <p class="chart-subtitle">Price return % by period</p>
+                    <div class="chart-wrap">
+                        <canvas id="shortTermChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel">
+                    <h3>Long-Term Growth</h3>
+                    <p class="chart-subtitle">5Y / 10Y CAGR and total 10Y return %</p>
+                    <div class="chart-wrap">
+                        <canvas id="longTermChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel">
+                    <h3>Risk Snapshot</h3>
+                    <p class="chart-subtitle">Volatility, drawdown, and distance from 52W high</p>
+                    <div class="chart-wrap">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <div class="section-grid">
@@ -243,4 +352,154 @@
             </p>
         {% endif %}
     </div>
+
+    {% if stock %}
+        {{ short_term_chart|json_script:"short-term-chart-data" }}
+        {{ long_term_chart|json_script:"long-term-chart-data" }}
+        {{ risk_chart|json_script:"risk-chart-data" }}
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const shortData = JSON.parse(document.getElementById("short-term-chart-data").textContent);
+            const longData  = JSON.parse(document.getElementById("long-term-chart-data").textContent);
+            const riskData  = JSON.parse(document.getElementById("risk-chart-data").textContent);
+
+            const GRID      = "rgba(116,152,196,0.08)";
+            const ZERO_LINE = "rgba(116,152,196,0.35)";
+            const TICK_CLR  = "#8ea3c3";
+
+            const tooltip = {
+                backgroundColor: "rgba(7,17,32,0.94)",
+                borderColor: "rgba(116,152,196,0.3)",
+                borderWidth: 1,
+                titleColor: "#a7b8d3",
+                bodyColor: "#e8f0ff",
+                padding: 10,
+                callbacks: {
+                    label: (ctx) => {
+                        let v = Number(ctx.raw);
+                        if (Number.isNaN(v)) {
+                            if (typeof ctx.parsed === "number") {
+                                v = ctx.parsed;
+                            } else if (ctx.parsed && typeof ctx.parsed.x === "number") {
+                                v = ctx.parsed.x;
+                            } else if (ctx.parsed && typeof ctx.parsed.y === "number") {
+                                v = ctx.parsed.y;
+                            } else {
+                                v = null;
+                            }
+                        }
+                        return `  ${v !== null && v !== undefined ? v.toFixed(2) : "N/A"}%`;
+                    }
+                }
+            };
+
+            const baseScales = (zeroLine) => ({
+                x: {
+                    ticks: { color: TICK_CLR, font: { size: 12 } },
+                    grid: { color: GRID },
+                    border: { display: false }
+                },
+                y: {
+                    ticks: {
+                        color: TICK_CLR,
+                        font: { size: 11 },
+                        callback: (v) => v.toFixed(1) + "%"
+                    },
+                    grid: {
+                        color: zeroLine
+                            ? (ctx) => ctx.tick.value === 0 ? ZERO_LINE : GRID
+                            : GRID
+                    },
+                    border: { display: false }
+                }
+            });
+
+            const baseOpts = (zeroLine = true) => ({
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip },
+                scales: baseScales(zeroLine)
+            });
+
+            const greenRed = (values) =>
+                values.map(v => (v ?? 0) >= 0 ? "rgba(65,197,122,0.82)" : "rgba(255,111,125,0.82)");
+
+            // Short-term: green/red bars
+            new Chart(document.getElementById("shortTermChart"), {
+                type: "bar",
+                data: {
+                    labels: shortData.labels,
+                    datasets: [{
+                        data: shortData.values,
+                        backgroundColor: greenRed(shortData.values),
+                        borderWidth: 0,
+                        borderRadius: 5,
+                        borderSkipped: false
+                    }]
+                },
+                options: baseOpts(true)
+            });
+
+            // Long-term: blue gradient bars
+            new Chart(document.getElementById("longTermChart"), {
+                type: "bar",
+                data: {
+                    labels: longData.labels,
+                    datasets: [{
+                        data: longData.values,
+                        backgroundColor: [
+                            "rgba(88,166,255,0.80)",
+                            "rgba(88,166,255,0.65)",
+                            "rgba(88,166,255,0.50)"
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 5,
+                        borderSkipped: false
+                    }]
+                },
+                options: baseOpts(false)
+            });
+
+            // Risk: horizontal bar so labels fit cleanly
+            new Chart(document.getElementById("riskChart"), {
+                type: "bar",
+                data: {
+                    labels: riskData.labels,
+                    datasets: [{
+                        data: riskData.values,
+                        backgroundColor: [
+                            "rgba(255,201,107,0.80)",
+                            "rgba(255,111,125,0.80)",
+                            "rgba(255,111,125,0.65)"
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 5,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    ...baseOpts(true),
+                    indexAxis: "y",
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: TICK_CLR,
+                                font: { size: 11 },
+                                callback: (v) => v.toFixed(1) + "%"
+                            },
+                            grid: {
+                                color: (ctx) => ctx.tick.value === 0 ? ZERO_LINE : GRID
+                            },
+                            border: { display: false }
+                        },
+                        y: {
+                            ticks: { color: TICK_CLR, font: { size: 12 } },
+                            grid: { color: GRID },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+        </script>
+    {% endif %}
 {% endblock %}

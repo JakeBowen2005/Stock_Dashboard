@@ -4,6 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import redirect, render
 
 from stock_market_analyzer.Stock_class import Stock
+from stock_market_analyzer.data_loader import is_valid_ticker
 
 from .forms import SignUpForm
 from .models import WatchList, WatchListItem
@@ -122,9 +123,11 @@ def home(request):
         if not ticker:
             notice = "Enter a ticker symbol."
         elif ticker in added_stocks:
-            notice = f"{ticker} is already added."
+            notice = f"{ticker} is already in your watchlist."
         elif len(added_stocks) >= 8:
             notice = "You can add up to 8 stocks."
+        elif not is_valid_ticker(ticker):
+            notice = f"'{ticker}' is not a recognized ticker symbol."
         else:
             WatchListItem.objects.get_or_create(watchlist=watchlist, ticker=ticker)
             notice = f"Added {ticker}."
@@ -141,14 +144,16 @@ def analyze(request):
     _, added_stocks = _get_user_tickers(request.user)
     stock_summaries = []
 
+    failed_tickers = []
     for ticker in added_stocks:
         try:
             stock_summaries.append(Stock(ticker).summary_dict())
         except Exception:
-            pass
+            failed_tickers.append(ticker)
 
     return render(request, "stocks/dashboard.html", {
-        "stocks": stock_summaries
+        "stocks": stock_summaries,
+        "failed_tickers": failed_tickers,
     })
 
 
@@ -166,7 +171,56 @@ def stock_detail(request, ticker):
         })
 
     signal_snapshot = _build_signal_snapshot(stock)
+
+    mc = stock.get("market_cap")
+    if mc is None:
+        market_cap_display = "N/A"
+    elif mc >= 1_000_000_000_000:
+        market_cap_display = f"${mc / 1_000_000_000_000:.2f}T"
+    elif mc >= 1_000_000_000:
+        market_cap_display = f"${mc / 1_000_000_000:.2f}B"
+    elif mc >= 1_000_000:
+        market_cap_display = f"${mc / 1_000_000:.2f}M"
+    else:
+        market_cap_display = f"${mc:,.0f}"
+
+    employees = stock.get("employees")
+    employees_display = f"{employees:,}" if employees else "N/A"
+
+    short_term_chart = {
+        "labels": ["1W", "1M", "3M", "6M"],
+        "values": [
+            stock.get("one_week_return"),
+            stock.get("one_month_return"),
+            stock.get("three_month_return"),
+            stock.get("six_month_return"),
+        ],
+    }
+
+    long_term_chart = {
+        "labels": ["5Y CAGR", "10Y CAGR", "10Y Total Return"],
+        "values": [
+            stock.get("cagr_5y"),
+            stock.get("cagr_10y"),
+            stock.get("total_return_10y"),
+        ],
+    }
+
+    risk_chart = {
+        "labels": ["Volatility", "Max Drawdown", "% from 52W High"],
+        "values": [
+            stock.get("volatility"),
+            stock.get("max_drawdown"),
+            stock.get("percent_from_high"),
+        ],
+    }
+
     return render(request, "stocks/stock_detail.html", {
         "stock": stock,
         "signal": signal_snapshot,
+        "market_cap_display": market_cap_display,
+        "employees_display": employees_display,
+        "short_term_chart": short_term_chart,
+        "long_term_chart": long_term_chart,
+        "risk_chart": risk_chart,
     })

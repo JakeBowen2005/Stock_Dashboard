@@ -42,11 +42,27 @@ class Stock:
         self.current_price_from_low = self.year_high_low_stats["Percent From Low"]
         self.max_drawdown = stock_metrics.max_drawdown(self.price_history)
         self.alltime_high = stock_metrics.alltime_high(self.price_history)
-        self.eps = self.financials.loc["Basic EPS"].iloc[0]
+        try:
+            self.eps = float(self.financials.loc["Basic EPS"].iloc[0])
+        except (KeyError, IndexError, TypeError):
+            self.eps = None
         self.cagr_5y = stock_metrics.cagr(self.price_history, years=5)
         self.cagr_10y = stock_metrics.cagr(self.price_history, years=10)
         self.roe = stock_metrics.return_on_equity(self.financials, self.balance_sheet)
         self.debt_to_equity = stock_metrics.debt_to_equity(self.balance_sheet)
+
+        # Company profile from yfinance info
+        info = self.ticker.info or {}
+        self.company_name = info.get("longName") or info.get("shortName") or self.name
+        self.sector = info.get("sector") or "N/A"
+        self.industry = info.get("industry") or "N/A"
+        self.market_cap = info.get("marketCap")
+        self.description = info.get("longBusinessSummary") or ""
+        self.employees = info.get("fullTimeEmployees")
+        self.dividend_yield = info.get("dividendYield")
+        self.beta = info.get("beta")
+        self.forward_pe = info.get("forwardPE")
+        self.price_to_book = info.get("priceToBook")
 
 
     #Recent performace
@@ -84,8 +100,8 @@ class Stock:
                     "one_month_return": round(self.one_month_return * 100, 2),
                     "three_month_return": round(self.three_month_return * 100, 2),
                     "six_month_return": round(self.six_month_return * 100, 2),
-                    "pe_ratio": round(self.price_to_earnings, 2),
-                    "eps": round(self.eps, 2),
+                    "pe_ratio": round_or_none(self.price_to_earnings),
+                    "eps": round_or_none(self.eps),
                     "cagr_5y": round(self.cagr_5y * 100, 2),
                     "cagr_10y": round(self.cagr_10y * 100, 2),
                     "total_return_10y": round(self.total_return, 2),
@@ -94,5 +110,15 @@ class Stock:
                     "above_200ma": self.is_above200_ma,
                     "roe": round_or_none(self.roe * 100) if self.roe is not None else None,
                     "debt_to_equity": round_or_none(self.debt_to_equity),
+                    "company_name": self.company_name,
+                    "sector": self.sector,
+                    "industry": self.industry,
+                    "market_cap": self.market_cap,
+                    "description": self.description,
+                    "employees": self.employees,
+                    "dividend_yield": round_or_none(self.dividend_yield * 100) if self.dividend_yield is not None else None,
+                    "beta": round_or_none(self.beta),
+                    "forward_pe": round_or_none(self.forward_pe),
+                    "price_to_book": round_or_none(self.price_to_book),
         }
         return stock_dict

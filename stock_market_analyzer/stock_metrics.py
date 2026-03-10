@@ -24,13 +24,15 @@ def basic_stats(data):
         "Annualized Volatility": float(annualized_volatility)
     }
 
-def price_to_earnings(history,financials):
+def price_to_earnings(history, financials):
     current_price = history["Close"].iloc[-1]
-
-    eps = financials.loc["Basic EPS"].iloc[0]
-
-    pe = current_price/eps
-    return pe
+    try:
+        eps = financials.loc["Basic EPS"].iloc[0]
+    except (KeyError, IndexError):
+        return None
+    if not eps or eps == 0:
+        return None
+    return float(current_price / eps)
 
 def total_return_percentage(history):
     end = history["Adj Close"].iloc[-1]

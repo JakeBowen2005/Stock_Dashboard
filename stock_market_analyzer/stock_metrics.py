@@ -6,6 +6,11 @@ def daily_returns(data):
 
 def basic_stats(data):
     daily_return = data["Daily Returns"].dropna()
+    if daily_return.empty:
+        return {
+            "Annualized Return": 0.0,
+            "Annualized Volatility": 0.0
+        }
 
     # Total compounded return
     total_growth = (1 + daily_return).prod()
@@ -169,7 +174,6 @@ def debt_to_equity(balance_sheet):
     if total_debt is None or total_equity in (None, 0):
         return None
     return float(total_debt / total_equity)
-
 
 
 

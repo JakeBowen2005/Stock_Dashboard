@@ -1,3 +1,4 @@
+import pandas as pd
 import yfinance as yf
 
 def get_ticker(ticker):
@@ -11,13 +12,40 @@ def is_valid_ticker(ticker):
         return False
 
 def get_history(ticker, period):
-    return ticker.history(period=period, auto_adjust=False)
+    try:
+        history = ticker.history(period=period, auto_adjust=False)
+    except Exception:
+        history = pd.DataFrame()
+
+    if history is None or history.empty:
+        try:
+            symbol = getattr(ticker, "ticker", "")
+            history = yf.download(
+                symbol,
+                period=period,
+                auto_adjust=False,
+                progress=False,
+                threads=False,
+            )
+        except Exception:
+            history = pd.DataFrame()
+
+    return history if history is not None else pd.DataFrame()
 
 def get_financials(ticker):
-    return ticker.financials
+    try:
+        return ticker.financials
+    except Exception:
+        return pd.DataFrame()
 
 def get_actions(ticker):
-    return ticker.actions
+    try:
+        return ticker.actions
+    except Exception:
+        return pd.DataFrame()
 
 def get_balance_sheet(ticker):
-    return ticker.balance_sheet
+    try:
+        return ticker.balance_sheet
+    except Exception:
+        return pd.DataFrame()

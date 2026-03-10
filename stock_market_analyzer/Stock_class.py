@@ -13,6 +13,11 @@ class Stock:
         self.name = ticker
         self.ticker = data_loader.get_ticker(ticker)
         self.price_history = data_loader.get_history(self.ticker, '10y')
+        if self.price_history is None or self.price_history.empty:
+            raise ValueError(f"No price data found for ticker: {ticker}")
+        if "Adj Close" not in self.price_history.columns or "Close" not in self.price_history.columns:
+            raise ValueError(f"Missing required price columns for ticker: {ticker}")
+
         self.price_history = stock_metrics.daily_returns(self.price_history)
         self.financials = data_loader.get_financials(self.ticker)
         self.actions = data_loader.get_actions(self.ticker)
@@ -20,10 +25,6 @@ class Stock:
 
         # Current Price
         self.current_price = self.price_history["Adj Close"].iloc[-1]
-
-        #Validate ticker
-        if self.price_history.empty:
-            raise ValueError(f"No price data found for ticker: {ticker}")
 
         #Computed Metrics
         self.basic_stats = stock_metrics.basic_stats(self.price_history)
@@ -52,7 +53,10 @@ class Stock:
         self.debt_to_equity = stock_metrics.debt_to_equity(self.balance_sheet)
 
         # Company profile from yfinance info
-        info = self.ticker.info or {}
+        try:
+            info = self.ticker.info or {}
+        except Exception:
+            info = {}
         self.company_name = info.get("longName") or info.get("shortName") or self.name
         self.sector = info.get("sector") or "N/A"
         self.industry = info.get("industry") or "N/A"
@@ -87,6 +91,9 @@ class Stock:
         def round_or_none(value, digits=2):
             return round(value, digits) if value is not None else None
 
+        def pct_or_none(value, digits=2):
+            return round(value * 100, digits) if value is not None else None
+
         stock_dict = {
                     "name": self.name,
                     "current_price": round(self.current_price, 2),
@@ -96,14 +103,14 @@ class Stock:
                     "52w_low": round(self.year_low, 2),
                     "percent_from_high": round(self.current_price_from_high * 100, 2),
                     "percent_from_low": round(self.current_price_from_low * 100, 2),
-                    "one_week_return": round(self.one_week_return * 100, 2),
-                    "one_month_return": round(self.one_month_return * 100, 2),
-                    "three_month_return": round(self.three_month_return * 100, 2),
-                    "six_month_return": round(self.six_month_return * 100, 2),
+                    "one_week_return": pct_or_none(self.one_week_return),
+                    "one_month_return": pct_or_none(self.one_month_return),
+                    "three_month_return": pct_or_none(self.three_month_return),
+                    "six_month_return": pct_or_none(self.six_month_return),
                     "pe_ratio": round_or_none(self.price_to_earnings),
                     "eps": round_or_none(self.eps),
-                    "cagr_5y": round(self.cagr_5y * 100, 2),
-                    "cagr_10y": round(self.cagr_10y * 100, 2),
+                    "cagr_5y": pct_or_none(self.cagr_5y),
+                    "cagr_10y": pct_or_none(self.cagr_10y),
                     "total_return_10y": round(self.total_return, 2),
                     "max_drawdown": round(self.max_drawdown * 100, 2),
                     "above_50ma": self.is_above50_ma,

@@ -4,7 +4,6 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import redirect, render
 
 from stock_market_analyzer.Stock_class import Stock
-from stock_market_analyzer.data_loader import is_valid_ticker
 
 from .forms import SignUpForm
 from .models import WatchList, WatchListItem
@@ -126,8 +125,6 @@ def home(request):
             notice = f"{ticker} is already in your watchlist."
         elif len(added_stocks) >= 8:
             notice = "You can add up to 8 stocks."
-        elif not is_valid_ticker(ticker):
-            notice = f"'{ticker}' is not a recognized ticker symbol."
         else:
             WatchListItem.objects.get_or_create(watchlist=watchlist, ticker=ticker)
             notice = f"Added {ticker}."
@@ -148,7 +145,8 @@ def analyze(request):
     for ticker in added_stocks:
         try:
             stock_summaries.append(Stock(ticker).summary_dict())
-        except Exception:
+        except Exception as exc:
+            print(f"[analyze] failed ticker {ticker}: {exc}")
             failed_tickers.append(ticker)
 
     return render(request, "stocks/dashboard.html", {

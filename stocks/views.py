@@ -65,7 +65,7 @@ def _get_user_tickers(user):
 
 def _get_cached_stock_summary(ticker, detailed=False):
     mode = "detail" if detailed else "dashboard"
-    cache_key = f"stock_summary:{ticker}:{mode}:v1"
+    cache_key = f"stock_summary:{ticker}:{mode}:v2"
     cached = cache.get(cache_key)
     if cached:
         return cached
@@ -197,6 +197,13 @@ def stock_detail(request, ticker):
                 "ticker": ticker,
                 "error": "Could not load data for this ticker.",
             })
+
+    # Final hard defaults so profile fields always render even when API data is missing.
+    stock["company_name"] = stock.get("company_name") or ticker
+    stock["sector"] = stock.get("sector") or "Data unavailable"
+    stock["industry"] = stock.get("industry") or "Data unavailable"
+    if not stock.get("description"):
+        stock["description"] = f"{stock['company_name']} company profile data is currently unavailable."
 
     signal_snapshot = _build_signal_snapshot(stock)
 

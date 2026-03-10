@@ -95,6 +95,33 @@
         font-weight: 600;
     }
 
+    .badge-cooldown {
+        background: rgba(255,191,71,0.16);
+        color: #ffcf66;
+        border: 1px solid rgba(255,191,71,0.35);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-reset {
+        background: rgba(88,166,255,0.15);
+        color: #9ac7ff;
+        border: 1px solid rgba(88,166,255,0.35);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-subtext {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.3;
+    }
+
     .notif-bar {
         display: flex;
         align-items: center;
@@ -180,7 +207,7 @@
     <!-- Alert list -->
     <div class="panel">
         <h3>Your Alerts</h3>
-        {% if alerts %}
+        {% if alert_rows %}
             <table class="alert-table">
                 <thead>
                     <tr>
@@ -192,30 +219,35 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for alert in alerts %}
+                    {% for row in alert_rows %}
                     <tr>
-                        <td><strong>{{ alert.ticker }}</strong></td>
+                        <td><strong>{{ row.alert.ticker }}</strong></td>
                         <td>
-                            {% if alert.alert_type == "price" %}
-                                Price {{ alert.direction }} ${{ alert.threshold }}
+                            {% if row.alert.alert_type == "price" %}
+                                Price {{ row.alert.direction }} ${{ row.alert.threshold }}
                             {% else %}
-                                {{ alert.direction|title }} {{ alert.threshold }}% change
-                                {% if alert.baseline_price %}from ${{ alert.baseline_price }}{% endif %}
+                                {{ row.alert.direction|title }} {{ row.alert.threshold }}% change
+                                {% if row.alert.baseline_price %}from ${{ row.alert.baseline_price }}{% endif %}
                             {% endif %}
                         </td>
-                        <td>{% if alert.baseline_price %}${{ alert.baseline_price }}{% else %}—{% endif %}</td>
+                        <td>{% if row.alert.baseline_price %}${{ row.alert.baseline_price }}{% else %}—{% endif %}</td>
                         <td>
-                            {% if alert.triggered %}
+                            {% if row.status_label == "Cooldown" %}
+                                <span class="badge-cooldown">{{ row.status_label }}</span>
+                            {% elif row.status_label == "Waiting Reset" %}
+                                <span class="badge-reset">{{ row.status_label }}</span>
+                            {% elif row.alert.triggered %}
                                 <span class="badge-triggered">Triggered</span>
                             {% else %}
                                 <span class="badge-active">Active</span>
                             {% endif %}
+                            <div class="status-subtext">{{ row.status_detail }}</div>
                         </td>
                         <td>
                             <form method="post" style="margin:0;">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="alert_id" value="{{ alert.pk }}">
+                                <input type="hidden" name="alert_id" value="{{ row.alert.pk }}">
                                 <button type="submit" style="background:rgba(255,111,125,0.15); border-color:rgba(255,111,125,0.3); color:var(--neg); padding:5px 10px; font-size:12px;">Delete</button>
                             </form>
                         </td>

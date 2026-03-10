@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import login, logout
@@ -6,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -68,6 +70,25 @@ def _get_user_tickers(user):
     return watchlist, list(
         watchlist.items.values_list("ticker", flat=True).order_by("ticker")
     )
+
+
+def _build_alert_status(alert, now):
+    cooldown_until = None
+    if alert.last_notified_at:
+        cooldown_until = alert.last_notified_at + timedelta(hours=24)
+
+    if cooldown_until and now < cooldown_until:
+        detail = f"Cooldown until {timezone.localtime(cooldown_until).strftime('%b %d, %I:%M %p')}."
+        return "Cooldown", detail
+
+    if not alert.rearm_ready:
+        return "Waiting Reset", "Waiting for price to move away from trigger level."
+
+    if alert.last_notified_at:
+        detail = f"Last notified {timezone.localtime(alert.last_notified_at).strftime('%b %d, %I:%M %p')}."
+        return "Re-armed", detail
+
+    return "Ready", "Alert has not fired yet."
 
 
 # ---------------------------------------------------------------------------
@@ -287,8 +308,20 @@ def alerts_view(request):
         return redirect("alerts")
 
     user_alerts = StockAlert.objects.filter(user=request.user).order_by("triggered", "ticker")
+    now = timezone.now()
+    alert_rows = []
+    for alert in user_alerts:
+        status_label, status_detail = _build_alert_status(alert, now)
+        alert_rows.append(
+            {
+                "alert": alert,
+                "status_label": status_label,
+                "status_detail": status_detail,
+            }
+        )
+
     return render(request, "stocks/alerts.html", {
-        "alerts": user_alerts,
+        "alert_rows": alert_rows,
         "prefill_ticker": prefill_ticker,
         "user_tickers": user_tickers,
         "vapid_public_key": settings.VAPID_PUBLIC_KEY,

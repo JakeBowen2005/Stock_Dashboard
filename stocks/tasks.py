@@ -20,7 +20,7 @@ def _recommendation_snippet(rec):
     hold = rec.get("hold", 0)
     sell = rec.get("sell", 0)
     strong_sell = rec.get("strongSell", 0)
-    return f" | Rec {period}: SB {strong_buy} B {buy} H {hold} S {sell} SS {strong_sell}"
+    return f" | Anaylyst Recommendations from {period}: Strong buys {strong_buy} | Buys {buy} | Hold {hold} | Sell | {sell} Strong Sell {strong_sell} |"
 
 
 def _triggered(alert, current, threshold, pct_change):

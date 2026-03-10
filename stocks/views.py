@@ -65,10 +65,11 @@ def _get_user_tickers(user):
 
 def _get_cached_stock_summary(ticker, detailed=False):
     mode = "detail" if detailed else "dashboard"
-    cache_key = f"stock_summary:{ticker}:{mode}:v2"
-    cached = cache.get(cache_key)
-    if cached:
-        return cached
+    cache_key = f"stock_summary:{ticker}:{mode}:v3"
+    if not detailed:
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
 
     stock = Stock(
         ticker,
@@ -76,7 +77,8 @@ def _get_cached_stock_summary(ticker, detailed=False):
         include_fundamentals=detailed,
     ).summary_dict()
 
-    cache.set(cache_key, stock, DETAIL_CACHE_TTL if detailed else DASHBOARD_CACHE_TTL)
+    if not detailed:
+        cache.set(cache_key, stock, DASHBOARD_CACHE_TTL)
     return stock
 
 

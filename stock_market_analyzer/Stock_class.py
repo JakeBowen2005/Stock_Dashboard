@@ -13,6 +13,7 @@ class Stock:
     def __init__(self, ticker, include_profile=False, include_fundamentals=False):
         self.name = ticker.upper().strip()
         self.ticker = data_loader.get_ticker(self.name)
+        self.info = {}
         self.price_history = data_loader.get_history(self.ticker, "10y")
 
         if self.price_history is None or self.price_history.empty:
@@ -81,31 +82,56 @@ class Stock:
     def _load_profile(self):
         info = {}
 
-        for _ in range(2):
+        for _ in range(3):
             try:
-                info = self.ticker.info or {}
-                if info:
+                raw = self.ticker.info or {}
+                if isinstance(raw, dict) and raw:
+                    info.update(raw)
                     break
             except Exception:
-                info = {}
                 time.sleep(0.25)
 
-        if not info:
+        for _ in range(2):
             try:
-                info = self.ticker.get_info() or {}
+                raw_extra = self.ticker.get_info() or {}
+                if isinstance(raw_extra, dict) and raw_extra:
+                    info.update({k: v for k, v in raw_extra.items() if v is not None})
+                    break
             except Exception:
-                info = {}
+                time.sleep(0.25)
 
-        self.company_name = info.get("longName") or info.get("shortName") or self.name
-        self.sector = info.get("sector") or "Data unavailable"
-        self.industry = info.get("industry") or "Data unavailable"
-        self.market_cap = info.get("marketCap")
-        self.description = info.get("longBusinessSummary") or f"{self.company_name} company profile data is currently unavailable."
-        self.employees = info.get("fullTimeEmployees")
-        self.dividend_yield = info.get("dividendYield")
-        self.beta = info.get("beta")
-        self.forward_pe = info.get("forwardPE")
-        self.price_to_book = info.get("priceToBook")
+        try:
+            fast = self.ticker.fast_info
+            if fast is not None:
+                if hasattr(fast, "items"):
+                    fast_map = dict(fast.items())
+                else:
+                    fast_map = dict(fast)
+                info.update({k: v for k, v in fast_map.items() if v is not None})
+        except Exception:
+            pass
+
+        self.info = info
+
+        self.company_name = (
+            self.info.get("longName")
+            or self.info.get("shortName")
+            or self.info.get("displayName")
+            or self.name
+        )
+        self.sector = self.info.get("sector") or "Data unavailable"
+        self.industry = self.info.get("industry") or "Data unavailable"
+        self.market_cap = self.info.get("marketCap")
+        self.description = (
+            self.info.get("longBusinessSummary")
+            or self.info.get("description")
+            or f"{self.company_name} company profile data is currently unavailable."
+        )
+        self.employees = self.info.get("fullTimeEmployees")
+        self.dividend_yield = self.info.get("dividendYield")
+        self.beta = self.info.get("beta")
+        self.forward_pe = self.info.get("forwardPE")
+        self.price_to_book = self.info.get("priceToBook")
 
     def summary_dict(self):
         def round_or_none(value, digits=2):

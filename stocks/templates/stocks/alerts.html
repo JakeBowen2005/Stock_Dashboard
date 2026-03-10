@@ -231,6 +231,8 @@
 
 <script>
 const VAPID_PUBLIC_KEY = "{{ vapid_public_key }}";
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 
 function urlBase64ToUint8Array(base64String) {
     const padding = "=".repeat((4 - base64String.length % 4) % 4);
@@ -244,14 +246,26 @@ async function checkNotifStatus() {
     const btn = document.getElementById("enableNotifBtn");
 
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        status.textContent = "Push not supported in this browser.";
+        if (isIOS && !isStandalone) {
+            status.textContent = "On iPhone: Add this app to Home Screen, then open it there to enable notifications.";
+        } else {
+            status.textContent = "Push not supported in this browser.";
+        }
+        return;
+    }
+
+    if (!VAPID_PUBLIC_KEY) {
+        status.textContent = "Push disabled: missing VAPID public key.";
         return;
     }
 
     const perm = Notification.permission;
     if (perm === "granted") {
-        // Check if already subscribed
-        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+            reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+            await navigator.serviceWorker.ready;
+        }
         if (reg) {
             const sub = await reg.pushManager.getSubscription();
             if (sub) { status.textContent = "Notifications enabled ✓"; return; }
@@ -272,7 +286,10 @@ async function subscribePush() {
     btn.disabled = true;
 
     try {
-        const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+            reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        }
         await navigator.serviceWorker.ready;
 
         const sub = await reg.pushManager.subscribe({
@@ -290,7 +307,11 @@ async function subscribePush() {
         status.textContent = "Notifications enabled ✓";
         btn.style.display = "none";
     } catch (err) {
-        status.textContent = "Failed: " + err.message;
+        if (isIOS && !isStandalone) {
+            status.textContent = "Use Share -> Add to Home Screen, then reopen app to enable notifications.";
+        } else {
+            status.textContent = "Failed: " + err.message;
+        }
         btn.disabled = false;
     }
 }

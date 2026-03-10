@@ -170,7 +170,7 @@
         <div class="top-bar">
             <div>
                 {% if stock %}
-                    <h1 class="title">{{ stock.name }} Deep Analysis</h1>
+                    <h1 class="title">{{ stock.company_name }} ({{ stock.name }})</h1>
                     <p class="subtitle">Short-term momentum, long-term growth, risk, and valuation signals</p>
                 {% else %}
                     <h1 class="title">{{ ticker }} Deep Analysis</h1>
@@ -212,31 +212,35 @@
                     </div>
                 {% endif %}
 
-                <!-- Key profile metrics grid -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:16px;">
+                <!-- Key price snapshot tiles -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:16px;">
                     <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Market Cap</div>
-                        <div style="font-size:15px; font-weight:700;">{{ market_cap_display }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">52W High</div>
+                        <div style="font-size:15px; font-weight:700;">${{ stock.52w_high|floatformat:2 }}</div>
                     </div>
                     <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Employees</div>
-                        <div style="font-size:15px; font-weight:700;">{{ employees_display }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">52W Low</div>
+                        <div style="font-size:15px; font-weight:700;">${{ stock.52w_low|floatformat:2 }}</div>
                     </div>
                     <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Beta</div>
-                        <div style="font-size:15px; font-weight:700;">{% if stock.beta %}{{ stock.beta }}{% else %}N/A{% endif %}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">1M Return</div>
+                        <div class="metric-value {% if stock.one_month_return > 0 %}positive{% elif stock.one_month_return < 0 %}negative{% else %}neutral{% endif %}" style="font-size:15px;">
+                            {% if stock.one_month_return %}{{ stock.one_month_return|floatformat:2 }}%{% else %}N/A{% endif %}
+                        </div>
                     </div>
                     <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Dividend Yield</div>
-                        <div style="font-size:15px; font-weight:700;">{% if stock.dividend_yield %}{{ stock.dividend_yield }}%{% else %}—{% endif %}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">6M Return</div>
+                        <div class="metric-value {% if stock.six_month_return > 0 %}positive{% elif stock.six_month_return < 0 %}negative{% else %}neutral{% endif %}" style="font-size:15px;">
+                            {% if stock.six_month_return %}{{ stock.six_month_return|floatformat:2 }}%{% else %}N/A{% endif %}
+                        </div>
                     </div>
                     <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Forward P/E</div>
-                        <div style="font-size:15px; font-weight:700;">{% if stock.forward_pe %}{{ stock.forward_pe }}{% else %}N/A{% endif %}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Above 50-Day MA</div>
+                        <div class="metric-value {% if stock.above_50ma %}positive{% else %}negative{% endif %}" style="font-size:15px;">{% if stock.above_50ma %}Yes{% else %}No{% endif %}</div>
                     </div>
                     <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Price / Book</div>
-                        <div style="font-size:15px; font-weight:700;">{% if stock.price_to_book %}{{ stock.price_to_book }}{% else %}N/A{% endif %}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Above 200-Day MA</div>
+                        <div class="metric-value {% if stock.above_200ma %}positive{% else %}negative{% endif %}" style="font-size:15px;">{% if stock.above_200ma %}Yes{% else %}No{% endif %}</div>
                     </div>
                 </div>
 

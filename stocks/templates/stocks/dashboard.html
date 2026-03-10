@@ -97,6 +97,29 @@
         color: var(--text-muted);
         font-size: 15px;
     }
+
+    .dashboard-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-actions select {
+        min-width: 150px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-main);
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .dashboard-actions form {
+        margin: 0;
+    }
 {% endblock %}
 
 {% block content %}
@@ -116,6 +139,16 @@
         {% endif %}
 
         {% if stocks %}
+            <div class="dashboard-actions">
+                <form method="get" action="{% url 'alerts' %}">
+                    <select name="ticker">
+                        {% for ticker in alert_tickers %}
+                            <option value="{{ ticker }}">{{ ticker }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Set Alert</button>
+                </form>
+            </div>
             <div class="stock-grid">
                 {% for stock in stocks %}
                     <a class="card-link" href="{% url 'stock_detail' stock.name %}">

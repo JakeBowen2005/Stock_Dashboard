@@ -107,11 +107,12 @@ LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
 
 # Celery
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL") or os.getenv("REDIS_URL", "redis://localhost:6379")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND") or os.getenv("REDIS_URL", "redis://localhost:6379")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
-CELERY_TIMEZONE = "UTC"
+CELERY_TIMEZONE = "America/New_York"
+CELERY_ENABLE_UTC = True
 
 # Finnhub + Web Push
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")

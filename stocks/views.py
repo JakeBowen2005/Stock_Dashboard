@@ -169,6 +169,7 @@ def analyze(request):
     return render(request, "stocks/dashboard.html", {
         "stocks": stock_summaries,
         "failed_tickers": failed_tickers,
+        "alert_tickers": added_stocks,
     })
 
 
@@ -250,7 +251,10 @@ def stock_detail(request, ticker):
 
 @login_required
 def alerts_view(request):
+    _, user_tickers = _get_user_tickers(request.user)
     prefill_ticker = request.GET.get("ticker", "").upper()
+    if not prefill_ticker and user_tickers:
+        prefill_ticker = user_tickers[0]
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -269,7 +273,7 @@ def alerts_view(request):
         except ValueError:
             threshold = None
 
-        if ticker and alert_type in ("price", "pct") and direction in ("above", "below") and threshold is not None:
+        if ticker and alert_type in ("price", "pct") and direction in ("above", "below") and threshold is not None and ticker in user_tickers:
             quote = finnhub_client.get_quote(ticker)
             baseline = quote.get("c") or None
             StockAlert.objects.create(
@@ -286,6 +290,7 @@ def alerts_view(request):
     return render(request, "stocks/alerts.html", {
         "alerts": user_alerts,
         "prefill_ticker": prefill_ticker,
+        "user_tickers": user_tickers,
         "vapid_public_key": settings.VAPID_PUBLIC_KEY,
     })
 

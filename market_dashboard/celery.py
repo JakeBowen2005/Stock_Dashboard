@@ -8,6 +8,7 @@ app = Celery("market_dashboard")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
+# Uses CELERY_TIMEZONE from Django settings
 app.conf.beat_schedule = {
     "check-alerts-every-10-minutes": {
         "task": "stocks.tasks.check_alerts",
@@ -15,7 +16,6 @@ app.conf.beat_schedule = {
     },
     "weekly-digest-monday-6am-est": {
         "task": "stocks.tasks.send_weekly_digest",
-        # 6am EST = 11am UTC
-        "schedule": crontab(hour=11, minute=0, day_of_week=1),
+        "schedule": crontab(hour=6, minute=0, day_of_week=1),
     },
 }

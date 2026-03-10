@@ -141,7 +141,15 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Ticker</label>
-                    <input type="text" name="ticker" value="{{ prefill_ticker }}" placeholder="e.g. AAPL" required maxlength="10" style="text-transform:uppercase;">
+                    <select name="ticker" required>
+                        {% if user_tickers %}
+                            {% for ticker in user_tickers %}
+                                <option value="{{ ticker }}" {% if ticker == prefill_ticker %}selected{% endif %}>{{ ticker }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="">No watchlist tickers</option>
+                        {% endif %}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Alert Type</label>
@@ -163,7 +171,7 @@
                 </div>
                 <div class="form-group">
                     <label>&nbsp;</label>
-                    <button type="submit">Set Alert</button>
+                    <button type="submit" {% if not user_tickers %}disabled{% endif %}>Set Alert</button>
                 </div>
             </div>
         </form>

@@ -1,12 +1,16 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.cache import cache
 from django.shortcuts import redirect, render
 
 from stock_market_analyzer.Stock_class import Stock
 
 from .forms import SignUpForm
 from .models import WatchList, WatchListItem
+
+DASHBOARD_CACHE_TTL = 15 * 60
+DETAIL_CACHE_TTL = 30 * 60
 
 
 def _build_signal_snapshot(stock):
@@ -57,6 +61,23 @@ def _get_user_tickers(user):
     return watchlist, list(
         watchlist.items.values_list("ticker", flat=True).order_by("ticker")
     )
+
+
+def _get_cached_stock_summary(ticker, detailed=False):
+    mode = "detail" if detailed else "dashboard"
+    cache_key = f"stock_summary:{ticker}:{mode}:v1"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    stock = Stock(
+        ticker,
+        include_profile=detailed,
+        include_fundamentals=detailed,
+    ).summary_dict()
+
+    cache.set(cache_key, stock, DETAIL_CACHE_TTL if detailed else DASHBOARD_CACHE_TTL)
+    return stock
 
 
 def signup_view(request):
@@ -144,7 +165,7 @@ def analyze(request):
     failed_tickers = []
     for ticker in added_stocks:
         try:
-            stock_summaries.append(Stock(ticker).summary_dict())
+            stock_summaries.append(_get_cached_stock_summary(ticker, detailed=False))
         except Exception as exc:
             print(f"[analyze] failed ticker {ticker}: {exc}")
             failed_tickers.append(ticker)
@@ -161,12 +182,21 @@ def stock_detail(request, ticker):
     ticker = ticker.upper().strip()
 
     try:
-        stock = Stock(ticker).summary_dict()
-    except Exception:
-        return render(request, "stocks/stock_detail.html", {
-            "ticker": ticker,
-            "error": "Could not load data for this ticker.",
-        })
+        stock = _get_cached_stock_summary(ticker, detailed=True)
+    except Exception as detail_exc:
+        print(f"[detail] detailed fetch failed for {ticker}: {detail_exc}")
+        try:
+            # Fallback to lightweight data so user still gets a usable page.
+            stock = _get_cached_stock_summary(ticker, detailed=False)
+            stock["description"] = "Detailed company profile is temporarily unavailable due API limits."
+            stock["sector"] = stock.get("sector") or "Data unavailable"
+            stock["industry"] = stock.get("industry") or "Data unavailable"
+        except Exception as fallback_exc:
+            print(f"[detail] fallback fetch failed for {ticker}: {fallback_exc}")
+            return render(request, "stocks/stock_detail.html", {
+                "ticker": ticker,
+                "error": "Could not load data for this ticker.",
+            })
 
     signal_snapshot = _build_signal_snapshot(stock)
 

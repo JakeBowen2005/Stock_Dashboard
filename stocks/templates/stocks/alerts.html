@@ -105,6 +105,17 @@
     }
 
     .notif-bar p { margin: 0; font-size: 13px; color: var(--text-sub); }
+    .notif-meta { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+    .notif-actions { display:flex; align-items:center; gap:10px; flex-wrap: wrap; }
+    .notice-box {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(56,189,248,0.25);
+        background: rgba(56,189,248,0.08);
+        border-radius: 8px;
+        color: var(--text-main);
+        font-size: 12px;
+    }
 
     #notifStatus { font-size: 12px; color: var(--text-muted); }
 {% endblock %}
@@ -121,12 +132,24 @@
 
     <!-- Push notification opt-in -->
     <div class="notif-bar">
-        <p>Enable push notifications to receive alerts on your device even when the site is closed.</p>
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div>
+            <p>Enable push notifications to receive alerts on your device even when the site is closed.</p>
+            <div class="notif-meta">Saved subscriptions: {{ push_subscription_count }}</div>
+        </div>
+        <div class="notif-actions">
             <span id="notifStatus">Checking…</span>
             <button id="enableNotifBtn" class="btn btn-primary" style="display:none;" onclick="subscribePush()">Enable Notifications</button>
+            <form method="post" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="test_push">
+                <button type="submit" class="btn">Send Test Notification</button>
+            </form>
         </div>
     </div>
+
+    {% if notification_notice %}
+        <div class="notice-box">{{ notification_notice }}</div>
+    {% endif %}
 
     <!-- Create alert form -->
     <div class="panel" style="margin-bottom:16px;">

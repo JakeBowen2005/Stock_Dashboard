@@ -1,30 +1,41 @@
 import json
 import os
 
+from cryptography.hazmat.primitives import serialization
 from pywebpush import WebPushException, webpush
 
 
 def _vapid_private_key():
     """
-    Return VAPID private key for pywebpush.
-    Supports PEM strings, base64-encoded PEM, and raw base64url DER.
-    pywebpush accepts PEM directly when the string contains '-----'.
+    Return VAPID private key as base64url-encoded DER (expected by pywebpush).
+    Supports:
+    - PEM key
+    - base64-encoded PEM key
+    - already base64url DER
     """
     import base64
     raw = os.getenv("VAPID_PRIVATE_KEY", "").strip()
     if not raw:
         return None
 
-    # If it looks like base64-encoded PEM, decode it first.
-    if not raw.startswith("-----"):
+    maybe_pem = raw
+    if "BEGIN" not in raw:
         try:
             decoded = base64.b64decode(raw + "==").decode("utf-8")
-            if "-----" in decoded:
-                return decoded.strip()
+            if "BEGIN" in decoded:
+                maybe_pem = decoded.strip()
         except Exception:
             pass
 
-    # Return PEM as-is (pywebpush handles it natively) or raw base64url DER.
+    if "BEGIN" in maybe_pem:
+        key = serialization.load_pem_private_key(maybe_pem.encode("utf-8"), password=None)
+        der_bytes = key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        return base64.urlsafe_b64encode(der_bytes).decode("utf-8").rstrip("=")
+
     return raw
 
 
@@ -61,10 +72,24 @@ def send_push(subscription, title, body, url="/"):
 def send_push_to_user(user, title, body, url="/"):
     """Send a push notification to all subscriptions for a user."""
     from .models import PushSubscription
+    sent_count = 0
     dead = []
+    kept = 0
+
     for sub in PushSubscription.objects.filter(user=user):
         outcome = send_push(sub, title, body, url)
+        if outcome == "ok":
+            sent_count += 1
         if outcome == "delete":
             dead.append(sub.pk)
+        if outcome == "keep":
+            kept += 1
+
     if dead:
         PushSubscription.objects.filter(pk__in=dead).delete()
+
+    return {
+        "sent": sent_count,
+        "deleted": len(dead),
+        "kept_failed": kept,
+    }

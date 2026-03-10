@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from urllib.parse import quote_plus
 
 from django.conf import settings
 from django.contrib.auth import login, logout
@@ -7,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -16,6 +18,7 @@ from stock_market_analyzer.Stock_class import Stock
 from . import finnhub_client
 from .forms import SignUpForm
 from .models import PushSubscription, StockAlert, WatchList, WatchListItem
+from .push_utils import send_push_to_user
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +357,7 @@ def stock_detail(request, ticker):
 def alerts_view(request):
     _, user_tickers = _get_user_tickers(request.user)
     prefill_ticker = request.GET.get("ticker", "").upper()
+    notification_notice = request.GET.get("notice", "")
     if not prefill_ticker and user_tickers:
         prefill_ticker = user_tickers[0]
 
@@ -364,6 +368,19 @@ def alerts_view(request):
             alert_id = request.POST.get("alert_id")
             StockAlert.objects.filter(pk=alert_id, user=request.user).delete()
             return redirect("alerts")
+
+        if action == "test_push":
+            result = send_push_to_user(
+                request.user,
+                title="Test Alert: Market Dashboard",
+                body="Push delivery is working. You can receive notifications.",
+                url="/alerts/",
+            )
+            notice = (
+                f"Test push attempted. Sent: {result['sent']}, "
+                f"failed-kept: {result['kept_failed']}, removed-invalid: {result['deleted']}."
+            )
+            return redirect(f"{reverse('alerts')}?notice={quote_plus(notice)}")
 
         ticker = request.POST.get("ticker", "").strip().upper()
         alert_type = request.POST.get("alert_type")
@@ -404,6 +421,8 @@ def alerts_view(request):
         "alert_rows": alert_rows,
         "prefill_ticker": prefill_ticker,
         "user_tickers": user_tickers,
+        "notification_notice": notification_notice,
+        "push_subscription_count": PushSubscription.objects.filter(user=request.user).count(),
         "vapid_public_key": settings.VAPID_PUBLIC_KEY,
     })
 

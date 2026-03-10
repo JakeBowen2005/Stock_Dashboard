@@ -1,17 +1,24 @@
+import json
+
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.core.cache import cache
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from stock_market_analyzer.Stock_class import Stock
 
+from . import finnhub_client
 from .forms import SignUpForm
-from .models import WatchList, WatchListItem
+from .models import PushSubscription, StockAlert, WatchList, WatchListItem
 
-DASHBOARD_CACHE_TTL = 15 * 60
-DETAIL_CACHE_TTL = 30 * 60
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _build_signal_snapshot(stock):
     checks = [
@@ -63,29 +70,13 @@ def _get_user_tickers(user):
     )
 
 
-def _get_cached_stock_summary(ticker, detailed=False):
-    mode = "detail" if detailed else "dashboard"
-    cache_key = f"stock_summary:{ticker}:{mode}:v3"
-    if not detailed:
-        cached = cache.get(cache_key)
-        if cached:
-            return cached
-
-    stock = Stock(
-        ticker,
-        include_profile=detailed,
-        include_fundamentals=detailed,
-    ).summary_dict()
-
-    if not detailed:
-        cache.set(cache_key, stock, DASHBOARD_CACHE_TTL)
-    return stock
-
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
 
 def signup_view(request):
     if request.user.is_authenticated:
         return redirect("home")
-
     if request.method == "POST":
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -94,14 +85,12 @@ def signup_view(request):
             return redirect("home")
     else:
         form = SignUpForm()
-
     return render(request, "stocks/signup.html", {"form": form})
 
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("home")
-
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -113,7 +102,6 @@ def login_view(request):
             return redirect("home")
     else:
         form = AuthenticationForm()
-
     return render(request, "stocks/login.html", {"form": form})
 
 
@@ -122,6 +110,10 @@ def logout_view(request):
         logout(request)
     return redirect("login")
 
+
+# ---------------------------------------------------------------------------
+# Core pages
+# ---------------------------------------------------------------------------
 
 @login_required
 def home(request):
@@ -149,8 +141,12 @@ def home(request):
         elif len(added_stocks) >= 8:
             notice = "You can add up to 8 stocks."
         else:
-            WatchListItem.objects.get_or_create(watchlist=watchlist, ticker=ticker)
-            notice = f"Added {ticker}."
+            from stock_market_analyzer.data_loader import is_valid_ticker
+            if not is_valid_ticker(ticker):
+                notice = f"{ticker} is not a recognized ticker symbol."
+            else:
+                WatchListItem.objects.get_or_create(watchlist=watchlist, ticker=ticker)
+                notice = f"Added {ticker}."
 
     _, added_stocks = _get_user_tickers(request.user)
     return render(request, "stocks/home.html", {
@@ -163,15 +159,13 @@ def home(request):
 def analyze(request):
     _, added_stocks = _get_user_tickers(request.user)
     stock_summaries = []
-
     failed_tickers = []
     for ticker in added_stocks:
         try:
-            stock_summaries.append(_get_cached_stock_summary(ticker, detailed=False))
+            stock_summaries.append(Stock(ticker).summary_dict())
         except Exception as exc:
             print(f"[analyze] failed ticker {ticker}: {exc}")
             failed_tickers.append(ticker)
-
     return render(request, "stocks/dashboard.html", {
         "stocks": stock_summaries,
         "failed_tickers": failed_tickers,
@@ -184,28 +178,12 @@ def stock_detail(request, ticker):
     ticker = ticker.upper().strip()
 
     try:
-        stock = _get_cached_stock_summary(ticker, detailed=True)
-    except Exception as detail_exc:
-        print(f"[detail] detailed fetch failed for {ticker}: {detail_exc}")
-        try:
-            # Fallback to lightweight data so user still gets a usable page.
-            stock = _get_cached_stock_summary(ticker, detailed=False)
-            stock["description"] = "Detailed company profile is temporarily unavailable due API limits."
-            stock["sector"] = stock.get("sector") or "Data unavailable"
-            stock["industry"] = stock.get("industry") or "Data unavailable"
-        except Exception as fallback_exc:
-            print(f"[detail] fallback fetch failed for {ticker}: {fallback_exc}")
-            return render(request, "stocks/stock_detail.html", {
-                "ticker": ticker,
-                "error": "Could not load data for this ticker.",
-            })
-
-    # Final hard defaults so profile fields always render even when API data is missing.
-    stock["company_name"] = stock.get("company_name") or ticker
-    stock["sector"] = stock.get("sector") or "Data unavailable"
-    stock["industry"] = stock.get("industry") or "Data unavailable"
-    if not stock.get("description"):
-        stock["description"] = f"{stock['company_name']} company profile data is currently unavailable."
+        stock = Stock(ticker).summary_dict()
+    except Exception:
+        return render(request, "stocks/stock_detail.html", {
+            "ticker": ticker,
+            "error": "Could not load data for this ticker.",
+        })
 
     signal_snapshot = _build_signal_snapshot(stock)
 
@@ -233,7 +211,6 @@ def stock_detail(request, ticker):
             stock.get("six_month_return"),
         ],
     }
-
     long_term_chart = {
         "labels": ["5Y CAGR", "10Y CAGR", "10Y Total Return"],
         "values": [
@@ -242,7 +219,6 @@ def stock_detail(request, ticker):
             stock.get("total_return_10y"),
         ],
     }
-
     risk_chart = {
         "labels": ["Volatility", "Max Drawdown", "% from 52W High"],
         "values": [
@@ -252,6 +228,8 @@ def stock_detail(request, ticker):
         ],
     }
 
+    recommendations = finnhub_client.get_recommendations(ticker)
+
     return render(request, "stocks/stock_detail.html", {
         "stock": stock,
         "signal": signal_snapshot,
@@ -260,4 +238,99 @@ def stock_detail(request, ticker):
         "short_term_chart": short_term_chart,
         "long_term_chart": long_term_chart,
         "risk_chart": risk_chart,
+        "recommendations": recommendations,
+        "vapid_public_key": settings.VAPID_PUBLIC_KEY,
+        "finnhub_api_key": settings.FINNHUB_API_KEY,
     })
+
+
+# ---------------------------------------------------------------------------
+# Alerts
+# ---------------------------------------------------------------------------
+
+@login_required
+def alerts_view(request):
+    prefill_ticker = request.GET.get("ticker", "").upper()
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "delete":
+            alert_id = request.POST.get("alert_id")
+            StockAlert.objects.filter(pk=alert_id, user=request.user).delete()
+            return redirect("alerts")
+
+        ticker = request.POST.get("ticker", "").strip().upper()
+        alert_type = request.POST.get("alert_type")
+        direction = request.POST.get("direction")
+        threshold_raw = request.POST.get("threshold", "")
+        try:
+            threshold = float(threshold_raw)
+        except ValueError:
+            threshold = None
+
+        if ticker and alert_type in ("price", "pct") and direction in ("above", "below") and threshold is not None:
+            quote = finnhub_client.get_quote(ticker)
+            baseline = quote.get("c") or None
+            StockAlert.objects.create(
+                user=request.user,
+                ticker=ticker,
+                alert_type=alert_type,
+                direction=direction,
+                threshold=threshold,
+                baseline_price=baseline,
+            )
+        return redirect("alerts")
+
+    user_alerts = StockAlert.objects.filter(user=request.user).order_by("triggered", "ticker")
+    return render(request, "stocks/alerts.html", {
+        "alerts": user_alerts,
+        "prefill_ticker": prefill_ticker,
+        "vapid_public_key": settings.VAPID_PUBLIC_KEY,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Push subscription
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_POST
+@csrf_exempt
+def subscribe_push(request):
+    try:
+        data = json.loads(request.body)
+        endpoint = data["endpoint"]
+        p256dh = data["keys"]["p256dh"]
+        auth = data["keys"]["auth"]
+    except (KeyError, json.JSONDecodeError):
+        return JsonResponse({"error": "invalid"}, status=400)
+
+    PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={"user": request.user, "p256dh": p256dh, "auth": auth},
+    )
+    return JsonResponse({"status": "ok"})
+
+
+# ---------------------------------------------------------------------------
+# Live price API
+# ---------------------------------------------------------------------------
+
+@login_required
+def price_api(request, ticker):
+    quote = finnhub_client.get_quote(ticker.upper())
+    return JsonResponse(quote)
+
+
+# ---------------------------------------------------------------------------
+# Service worker
+# ---------------------------------------------------------------------------
+
+def service_worker(request):
+    sw_path = settings.BASE_DIR / "static" / "sw.js"
+    with open(sw_path, "rb") as f:
+        content = f.read()
+    response = HttpResponse(content, content_type="application/javascript")
+    response["Service-Worker-Allowed"] = "/"
+    return response

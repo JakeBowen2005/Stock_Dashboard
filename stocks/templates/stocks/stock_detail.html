@@ -176,7 +176,7 @@
                     <h1 class="title">{{ ticker }} Deep Analysis</h1>
                 {% endif %}
             </div>
-            <a class="link-btn">Set Alerts</a>
+            {% if stock %}<a class="link-btn" href="{% url 'alerts' %}?ticker={{ stock.name }}">Set Alerts</a>{% endif %}
             <a class="link-btn" href="{% url 'analyze' %}">Back to Dashboard</a>
         </div>
 
@@ -190,21 +190,12 @@
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
                     <div>
                         <h3 style="margin:0 0 4px;">{{ stock.company_name }}</h3>
-                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                            <span style="background:rgba(88,166,255,0.15); color:var(--accent); border:1px solid rgba(88,166,255,0.3); border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600;">{{ stock.sector }}</span>
-                            <span style="color:var(--text-muted); font-size:13px;">{{ stock.industry }}</span>
-                        </div>
+                        <div style="font-size:13px; color:var(--text-muted);">{{ stock.name }}</div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-size:28px; font-weight:700; color:var(--text-main);">${{ stock.current_price|floatformat:2 }}</div>
-                        <div style="font-size:12px; color:var(--text-muted);">Current Price</div>
+                        <div id="live-price" style="font-size:28px; font-weight:700; color:var(--text-main);">${{ stock.current_price|floatformat:2 }}</div>
+                        <div style="font-size:12px; color:var(--text-muted);">Live Price <span id="live-dot" style="display:inline-block; width:7px; height:7px; background:var(--pos); border-radius:50%; margin-left:4px; vertical-align:middle;"></span></div>
                     </div>
-                </div>
-
-                <!-- Business description -->
-                <div style="border-left:3px solid var(--border); padding-left:12px; margin:0 0 16px;">
-                    <p class="desc-text" id="companyDesc">{{ stock.description }}</p>
-                    <button class="desc-toggle" id="descToggle" onclick="toggleDesc()">Show more</button>
                 </div>
 
                 <!-- Key price snapshot tiles -->
@@ -391,6 +382,34 @@
                 </div>
             </div>
 
+            {% if recommendations %}
+            <div class="panel" style="margin-top:16px;">
+                <h3 style="margin:0 0 14px; font-size:16px;">Analyst Recommendations <span style="font-size:12px; color:var(--text-muted); font-weight:400;">— {{ recommendations.period }}</span></h3>
+                <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; text-align:center;">
+                    <div style="background:rgba(65,197,122,0.12); border:1px solid rgba(65,197,122,0.25); border-radius:8px; padding:12px 8px;">
+                        <div style="font-size:22px; font-weight:700; color:var(--pos);">{{ recommendations.strongBuy }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Strong Buy</div>
+                    </div>
+                    <div style="background:rgba(65,197,122,0.07); border:1px solid rgba(65,197,122,0.18); border-radius:8px; padding:12px 8px;">
+                        <div style="font-size:22px; font-weight:700; color:var(--pos);">{{ recommendations.buy }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Buy</div>
+                    </div>
+                    <div style="background:rgba(88,166,255,0.08); border:1px solid rgba(88,166,255,0.2); border-radius:8px; padding:12px 8px;">
+                        <div style="font-size:22px; font-weight:700; color:var(--accent);">{{ recommendations.hold }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Hold</div>
+                    </div>
+                    <div style="background:rgba(255,111,125,0.07); border:1px solid rgba(255,111,125,0.18); border-radius:8px; padding:12px 8px;">
+                        <div style="font-size:22px; font-weight:700; color:var(--neg);">{{ recommendations.sell }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Sell</div>
+                    </div>
+                    <div style="background:rgba(255,111,125,0.12); border:1px solid rgba(255,111,125,0.25); border-radius:8px; padding:12px 8px;">
+                        <div style="font-size:22px; font-weight:700; color:var(--neg);">{{ recommendations.strongSell }}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Strong Sell</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <p class="note" style="margin-top:16px;">
                 This is a decision-support summary, not financial advice.
             </p>
@@ -401,6 +420,21 @@
         {{ short_term_chart|json_script:"short-term-chart-data" }}
         {{ long_term_chart|json_script:"long-term-chart-data" }}
         {{ risk_chart|json_script:"risk-chart-data" }}
+
+        <script>
+            // Live price polling every 15 seconds
+            const TICKER = "{{ stock.name }}";
+            async function fetchLivePrice() {
+                try {
+                    const res = await fetch(`/api/price/${TICKER}/`);
+                    const data = await res.json();
+                    if (data.c && data.c > 0) {
+                        document.getElementById("live-price").textContent = "$" + data.c.toFixed(2);
+                    }
+                } catch (_) {}
+            }
+            setInterval(fetchLivePrice, 15000);
+        </script>
 
         <script>
             function toggleDesc() {

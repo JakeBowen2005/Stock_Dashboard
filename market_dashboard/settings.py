@@ -105,3 +105,16 @@ SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False").lower() == "true
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
+
+# Celery
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+# Finnhub + Web Push
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+VAPID_CONTACT_EMAIL = "jakeeb05@gmail.com"

@@ -12,7 +12,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "check-alerts-every-10-minutes": {
         "task": "stocks.tasks.check_alerts",
-        "schedule": crontab(minute="*/10"),
+        "schedule": crontab(minute="*/5"),
     },
     "weekly-digest-monday-6am-est": {
         "task": "stocks.tasks.send_weekly_digest",

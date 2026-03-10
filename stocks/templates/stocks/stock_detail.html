@@ -248,6 +248,23 @@
                     </div>
                     <p class="note" style="margin:0; max-width:320px;">{{ signal.message }}</p>
                 </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+                    <a class="link-btn"
+                       href="https://finance.yahoo.com/quote/{{ stock.name }}/financials"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       style="padding:7px 10px; font-size:12px;">
+                        View Financials Sheet
+                    </a>
+                    <a class="link-btn"
+                       href="https://finance.yahoo.com/quote/{{ stock.name }}/balance-sheet"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       style="padding:7px 10px; font-size:12px;">
+                        View Balance Sheet
+                    </a>
+                </div>
             </div>
 
             <div class="chart-grid">
